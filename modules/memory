@@ -1,5 +1,6 @@
 #!/bin/bash
-
+. ./insert
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
 result=$(/bin/cat /proc/meminfo \
         | /bin/sed 's/':'/''/' \
 	| /usr/bin/awk -F' '   \
@@ -17,25 +18,28 @@ temp_str=$(/bin/echo $result  \
         | /usr/bin/awk -F','   \
          '{for(iCnt=1;iCnt<=NF;iCnt++) print ""$iCnt""}'  \
          )
-mtotal=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+total=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemTotal/) print ""$iCnt""}}' \
         | /usr/bin/awk -F':'   \
          '{print ""$2""}'  \
          )
-mfree=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+free=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemFree/) print ""$iCnt""}}' \
         | /usr/bin/awk -F':'   \
          '{print ""$2""}'  \
          )
-mbuff=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+buffer=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Buffers/) print ""$iCnt""}}' \
         | /usr/bin/awk -F':'   \
          '{print ""$2""}'  \
          )
-mcache=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+cache=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Cache/) print ""$iCnt""}}' \
         | /usr/bin/awk -F':'   \
          '{print ""$2""}'  \
          )
-mutil=`echo "scale=4; ($mtotal-$mfree-$mbuff-$mcache)/$mtotal*100"|bc`
-echo "{" ${result%?}, \"UtilRate\":\"$mutil\""}"
+used=`echo "scale=0; ($total-$free-$buffer-$cache)"|bc| awk '{printf "%.0f", $0}'`
+utilize=`echo "scale=4; ($total-$free-$buffer-$cache)/$total*100"|bc|awk '{printf "%.2f", $0}'`
+SQLINSERT="insert into memory(free,used,buffer,cache,total,utilize,recordTime,server) values($free,$used,$buffer,$cache,$total,$utilize,\"$recordTime\",4);"
+echo $SQLINSERT
+insert $SQLINSERT
