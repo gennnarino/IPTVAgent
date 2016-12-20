@@ -1,22 +1,28 @@
 #!/bin/bash
-timestamp=`date +%c`
-
-  # Get the total CPU statistics, discarding the 'cpu ' prefix.
-  CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
-  userTime=${CPU[0]}
-  nice=${CPU[1]}
-  systemTime=${CPU[2]} 
-  idleTime=${CPU[3]}
-  ioWait=${CPU[4]}
-  irq=${CPU[5]}
-  softIrq=${CPU[6]}
-  stealStolen=${CPU[7]}
-  guestTime=${CPU[8]}
-  # Calculate the total CPU time.
-  TOTAL=0
-  for VALUE in "${CPU[@]}"; do
+. ./insert
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+# Get the total CPU statistics, discarding the 'cpu ' prefix.
+CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
+# Calculate the total CPU time.
+TOTAL=0
+for VALUE in "${CPU[@]}"; 
+  do
     let "TOTAL=$TOTAL+$VALUE"
   done
-result=$(echo  \"userTime\":`echo "scale=4;$userTime/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,      \"systemTime\":`echo "scale=4;$systemTime/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"ioWait\":`echo "scale=4;$ioWait/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"irq\":`echo "scale=4;$irq/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"softIrq\":`echo "scale=4;$softIrq/$TOTAL*100"|bc | awk '{printf "%.2f", $0}'`,\"nice\":`echo "scale=4;$nice/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"stealStolen\":`echo "scale=4;$stealStolen/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"idleTime\":`echo "scale=4;$idleTime/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"util\":`echo "scale=4;(1-$idleTime/$TOTAL-$ioWait/$TOTAL-$stealStolen/$TOTAL)*100"|bc| awk '{printf "%.2f", $0}'`
-	)
-echo "{" ${result}\"timestamp\":\"$timestamp\""}"
+idleTime=`echo "scale=4;${CPU[3]}/$TOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
+user=`echo "scale=4;${CPU[0]}/$TOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
+system=`echo "scale=4;${CPU[2]} /$TOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
+wait=`echo "scale=4;${CPU[4]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+hardIrq=`echo "scale=4;${CPU[5]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+softIrq=`echo "scale=4;${CPU[6]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+nice=`echo "scale=4;${CPU[1]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+steal=`echo "scale=4;${CPU[7]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+guest=`echo "scale=4;${CPU[8]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+utilize=`echo "scale=4;(1-${CPU[3]}/$TOTAL-${CPU[4]}/$TOTAL-${CPU[7]}/$TOTAL)*100"|bc| awk '{printf "%.2f", $0}'`
+ncpu=`echo $(cat /proc/stat|grep ^cpu -c)`
+let "ncpu-=1"
+SQLINSERT="insert into cpu(user,system,wait,hardIrq,softIrq,nice,steal,guest,utilize,ncpu,recordTime,server) values($user,$system,$wait,$hardIrq,$softIrq,$nice,$steal,$guest,$utilize,$ncpu,\"$recordTime\",4);"
+echo $SQLINSERT
+insert $SQLINSERT
+
+
