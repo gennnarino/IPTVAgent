@@ -1,8 +1,14 @@
 #!/bin/bash
-result=$(/bin/df -Ph | awk 'NR>1 { if($1~/\/dev/){
-{print "{\"file_system\": \"" $1 "\", \"size\": \"" $2 "\", \"used\": \"" $3 "\", \"avail\": \"" $4 "\", \"used%\":"} 
-{printf("\"%.2f",$5)}{print"%\",\"avail%\":"}
-{printf("\"%.2f",$4/$2*100)}{print "%\"}"} }
-}')
-
-echo [ ${result%?} ]
+. ./insert
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+rst=$(/bin/df -k | awk 'NR>1{a+=$4;b+=$3;c+=$2}END{print a","b","c}')
+free=$(echo $rst | awk -F ',' '{print $1}')
+free=`echo "scale=2;$free/1024/1024"|bc| awk '{printf "%.2f", $0}'`
+used=$(echo $rst | awk -F ',' '{print $2}')
+used=`echo "scale=2;$used/1024/1024"|bc| awk '{printf "%.2f", $0}'`
+total=$(echo $rst | awk -F ',' '{print $3}')
+total=`echo "scale=2;$total/1024/1024"|bc| awk '{printf "%.2f", $0}'`
+freePercent=`echo "scale=4;$free/$total*100"|bc| awk '{printf "%.2f", $0}'`
+SQLINSERT="insert into disk(free,used,total,freePercent,recordTime,server) values($free,$used,$total,$freePercent,\"$recordTime\",4);"
+echo $SQLINSERT
+insert $SQLINSERT
