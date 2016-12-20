@@ -1,0 +1,7 @@
+#!/bin/bash
+timestamp=`date +%c`
+result=$(/bin/cat /proc/net/dev \
+        |sed 's/':'/''/' \
+	| /usr/bin/awk  -F' '  ' NR>2 {if($1!="lo") print"\"interface\":\""$1"\",\"Bytes received\":"$2",\"packets received\":"$3",\"Bytes transmitted\":"$10",\"packets transmitted\":"$11","}' \
+	)
+echo "{" ${result%?}\"timestamp\":\"$timestamp\""}"

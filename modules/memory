@@ -1,0 +1,41 @@
+#!/bin/bash
+
+result=$(/bin/cat /proc/meminfo \
+        | /bin/sed 's/':'/''/' \
+	| /usr/bin/awk -F' '   \
+       '{if($1=="MemTotal"||$1=="MemFree"||$1=="Buffers"||$1=="Cached"||$1=="Active"||$1=="MemAvailable") print "\""$1"\":\""$2"\","}' \
+	| /bin/sed 'N;$s/,\n/\n/;P;D' \
+        )
+space=' '
+left_brace='{'
+right_brace='}'
+quote='\"'
+colon=':'
+temp_str=$(/bin/echo $result  \
+        | /bin/sed "s/$space$left_brace$right_brace//g"  \
+        | /bin/sed "s/$quote//g"  \
+        | /usr/bin/awk -F','   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++) print ""$iCnt""}'  \
+         )
+mtotal=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemTotal/) print ""$iCnt""}}' \
+        | /usr/bin/awk -F':'   \
+         '{print ""$2""}'  \
+         )
+mfree=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemFree/) print ""$iCnt""}}' \
+        | /usr/bin/awk -F':'   \
+         '{print ""$2""}'  \
+         )
+mbuff=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Buffers/) print ""$iCnt""}}' \
+        | /usr/bin/awk -F':'   \
+         '{print ""$2""}'  \
+         )
+mcache=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Cache/) print ""$iCnt""}}' \
+        | /usr/bin/awk -F':'   \
+         '{print ""$2""}'  \
+         )
+mutil=`echo "scale=4; ($mtotal-$mfree-$mbuff-$mcache)/$mtotal*100"|bc`
+echo "{" ${result%?}, \"UtilRate\":\"$mutil\""}"

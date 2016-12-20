@@ -1,0 +1,22 @@
+#!/bin/bash
+timestamp=`date +%c`
+
+  # Get the total CPU statistics, discarding the 'cpu ' prefix.
+  CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
+  userTime=${CPU[0]}
+  nice=${CPU[1]}
+  systemTime=${CPU[2]} 
+  idleTime=${CPU[3]}
+  ioWait=${CPU[4]}
+  irq=${CPU[5]}
+  softIrq=${CPU[6]}
+  stealStolen=${CPU[7]}
+  guestTime=${CPU[8]}
+  # Calculate the total CPU time.
+  TOTAL=0
+  for VALUE in "${CPU[@]}"; do
+    let "TOTAL=$TOTAL+$VALUE"
+  done
+result=$(echo  \"userTime\":`echo "scale=4;$userTime/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,      \"systemTime\":`echo "scale=4;$systemTime/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"ioWait\":`echo "scale=4;$ioWait/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"irq\":`echo "scale=4;$irq/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"softIrq\":`echo "scale=4;$softIrq/$TOTAL*100"|bc | awk '{printf "%.2f", $0}'`,\"nice\":`echo "scale=4;$nice/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"stealStolen\":`echo "scale=4;$stealStolen/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"idleTime\":`echo "scale=4;$idleTime/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`,\"util\":`echo "scale=4;(1-$idleTime/$TOTAL-$ioWait/$TOTAL-$stealStolen/$TOTAL)*100"|bc| awk '{printf "%.2f", $0}'`
+	)
+echo "{" ${result}\"timestamp\":\"$timestamp\""}"

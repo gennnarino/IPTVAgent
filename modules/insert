@@ -1,0 +1,35 @@
+#!/bin/bash
+
+declare -A mymap=(["id"]=5 ["serverName"]="centos" ["serverIp"]="123.456.789.0" ["state"]=2 ["operatingSystem"]="ubuntu")
+echo ${mymap[@]}
+# $1=tablename $2=map
+function insert()
+ { 
+echo "welcome to insert func"
+Host=localhost
+User=root
+Password=123
+MYSQL=`which mysql`
+KEYS=""
+VALUES=""
+#TABLENAME=$1
+MAP=(`echo "$1"`)
+echo $MAP
+# initialize the parameters
+
+#for key in ${!$MAP[@]}  
+#do  
+#    KEYS=${KEYS}","${key}
+#    VALUES=${VALUES}","${`echo ${MAP[$key]}`}
+#done  
+
+#MSG=`$MYSQL -h$Host -u$User << EOF
+#       use iptvm;
+#        insert into $TABLENAME() values();
+#        exit
+#        EOF`
+#echo $MSG
+
+echo "finished"
+}
+insert $mymap
