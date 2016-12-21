@@ -2,28 +2,67 @@
 shells=/home/suguannan/MyShells
 PATH=$PATH:$shells
 . $shells/insert
+# Get the total CPU statistics for the first time, discarding the 'cpu ' prefix.
+prevCPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
+prevTOTAL=0
+for VALUE in "${prevCPU[@]}"; 
+  do
+    let "prevTOTAL=$prevTOTAL+$VALUE"
+  done
+prevIdleTime=${prevCPU[3]}
+prevUser=${prevCPU[0]} 
+prevSystem=${prevCPU[2]}
+prevWait=${prevCPU[4]}
+prevHardIrq=${prevCPU[5]}
+prevSoftIrq=${prevCPU[6]}
+prevNice=${prevCPU[1]}
+prevSteal=${prevCPU[7]}
+prevGuest=${prevCPU[8]}
+#sleep for a while
+sleep 1
+#Get CPU statistics for the second time
 recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
-# Get the total CPU statistics, discarding the 'cpu ' prefix.
 CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
-# Calculate the total CPU time.
 TOTAL=0
 for VALUE in "${CPU[@]}"; 
   do
     let "TOTAL=$TOTAL+$VALUE"
   done
-idleTime=`echo "scale=4;${CPU[3]}/$TOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
-user=`echo "scale=4;${CPU[0]}/$TOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
-system=`echo "scale=4;${CPU[2]} /$TOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
-wait=`echo "scale=4;${CPU[4]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
-hardIrq=`echo "scale=4;${CPU[5]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
-softIrq=`echo "scale=4;${CPU[6]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
-nice=`echo "scale=4;${CPU[1]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
-steal=`echo "scale=4;${CPU[7]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
-guest=`echo "scale=4;${CPU[8]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
-utilize=`echo "scale=4;(1-${CPU[3]}/$TOTAL-${CPU[4]}/$TOTAL-${CPU[7]}/$TOTAL)*100"|bc| awk '{printf "%.2f", $0}'`
+idleTime=${CPU[3]}
+user=${CPU[0]}
+system=${CPU[2]} 
+wait=${CPU[4]}
+hardIrq=${CPU[5]}
+softIrq=${CPU[6]}
+nice=${CPU[1]}
+steal=${CPU[7]}
+guest=${CPU[8]}
+#Calculate the difference
+let "diffTOTAL=$TOTAL-$prevTOTAL"
+let "diffIdleTime=$idleTime-$prevIdleTime"
+let "diffUser=$user-$prevUser"
+let "diffSystem=$system-$prevSystem"
+let "diffWait=$wait-$prevWait"
+let "diffHardIrq=$hardIrq-$prevHardIrq"
+let "diffSoftIrq=$softIrq-$prevSoftIrq"
+let "diffNice=$nice-$prevNice"
+let "diffSteal=$steal-$prevSteal"
+let "diffGuest=$guest-$prevGuest"
+#Calculate the percentage
+idleTimeP=`echo "scale=4;$diffIdleTime/$diffTOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
+userP=`echo "scale=4;$diffUser/$diffTOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
+systemP=`echo "scale=4;$diffSystem/$diffTOTAL*100"|bc | awk '{printf "%.2f", $0}'` 
+waitP=`echo "scale=4;$diffWait/$diffTOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+hardIrqP=`echo "scale=4;$diffHardIrq/$diffTOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+softIrqP=`echo "scale=4;$diffSoftIrq/$diffTOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+niceP=`echo "scale=4;$diffNice/$diffTOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+stealP=`echo "scale=4;$diffSteal/$diffTOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+guestP=`echo "scale=4;$diffGuest/$diffTOTAL*100"|bc| awk '{printf "%.2f", $0}'`
+#Calculate the util rate of CPU
+utilize=`echo "scale=4;(1-$diffIdleTime/$diffTOTAL-$diffWait/$diffTOTAL-$diffSteal/$diffTOTAL)*100"|bc| awk '{printf "%.2f", $0}'`
 ncpu=`echo $(cat /proc/stat|grep ^cpu -c)`
 let "ncpu-=1"
-SQLINSERT="insert into cpu(user,system,wait,hardIrq,softIrq,nice,steal,guest,utilize,ncpu,idle,recordTime,server) values($user,$system,$wait,$hardIrq,$softIrq,$nice,$steal,$guest,$utilize,$ncpu,$idleTime,\"$recordTime\",\"localcent\");"
+SQLINSERT="insert into cpu(user,system,wait,hardIrq,softIrq,nice,steal,guest,utilize,ncpu,idle,recordTime,server) values($userP,$systemP,$waitP,$hardIrqP,$softIrqP,$niceP,$stealP,$guestP,$utilize,$ncpu,$idleTimeP,\"$recordTime\",\"localcent\");"
 echo $SQLINSERT
 insert $SQLINSERT
 
