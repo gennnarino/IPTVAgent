@@ -4,7 +4,7 @@ function insert()
 insert=`echo $@`
 Host=localhost
 User=root
-Password=123
+Password=111111
 MYSQL=`which mysql`
 MSG=`$MYSQL -h$Host -u$User -p$Password<< EOF
         use iptvm;

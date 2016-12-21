@@ -1,5 +1,7 @@
 #!/bin/bash
-. ./insert
+shells=/home/suguannan/MyShells
+PATH=$PATH:$shells
+. $shells/insert
 recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
 # Get the total CPU statistics, discarding the 'cpu ' prefix.
 CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
@@ -21,7 +23,7 @@ guest=`echo "scale=4;${CPU[8]}/$TOTAL*100"|bc| awk '{printf "%.2f", $0}'`
 utilize=`echo "scale=4;(1-${CPU[3]}/$TOTAL-${CPU[4]}/$TOTAL-${CPU[7]}/$TOTAL)*100"|bc| awk '{printf "%.2f", $0}'`
 ncpu=`echo $(cat /proc/stat|grep ^cpu -c)`
 let "ncpu-=1"
-SQLINSERT="insert into cpu(user,system,wait,hardIrq,softIrq,nice,steal,guest,utilize,ncpu,idle,recordTime,server) values($user,$system,$wait,$hardIrq,$softIrq,$nice,$steal,$guest,$utilize,$ncpu,$idleTime,\"$recordTime\",4);"
+SQLINSERT="insert into cpu(user,system,wait,hardIrq,softIrq,nice,steal,guest,utilize,ncpu,idle,recordTime,server) values($user,$system,$wait,$hardIrq,$softIrq,$nice,$steal,$guest,$utilize,$ncpu,$idleTime,\"$recordTime\",\"localcent\");"
 echo $SQLINSERT
 insert $SQLINSERT
 

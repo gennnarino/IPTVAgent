@@ -1,5 +1,7 @@
 #!/bin/bash
-. ./insert
+shells=/home/suguannan/MyShells
+PATH=$PATH:$shells
+. $shells/insert
 grepCmd=`which grep`
 awkCmd=`which awk`
 catCmd=`which cat`
@@ -14,7 +16,7 @@ load5=$(echo $rst|$awkCmd -F"," '{print $2}')
 load15=$(echo $rst|$awkCmd -F"," '{print $3}')
 processRun=$(echo $rst|$awkCmd -F"," '{print $4}'|$awkCmd -F"/" '{print $1}')
 processTotal=$(echo $rst|$awkCmd -F"," '{print $4}'|$awkCmd -F"/" '{print $2}')
-SQLINSERT="insert into loads(load1,load5,load15,processRun,processTotal,recordTime,server) values($load1,$load5,$load15,$processRun,$processTotal,\"$recordTime\",4);"
+SQLINSERT="insert into loads(load1,load5,load15,processRun,processTotal,recordTime,server) values($load1,$load5,$load15,$processRun,$processTotal,\"$recordTime\",\"localcent\");"
 echo $SQLINSERT
 insert $SQLINSERT
 

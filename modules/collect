@@ -1,0 +1,9 @@
+#!/bin/bash
+shells=/home/suguannan/MyShells
+PATH=$PATH:$shells
+sh $shells/memory &
+sh $shells/load_avg &
+sh $shells/disk &
+sh $shells/cpu_time &
+sh $shells/traffic &
+exit 0

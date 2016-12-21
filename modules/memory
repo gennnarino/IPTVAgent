@@ -1,5 +1,7 @@
 #!/bin/bash
-. ./insert
+shells=/home/suguannan/MyShells
+PATH=$PATH:$shells
+. $shells/insert
 recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
 result=$(/bin/cat /proc/meminfo \
         | /bin/sed 's/':'/''/' \
@@ -40,6 +42,6 @@ cache=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
          )
 used=`echo "scale=0; ($total-$free-$buffer-$cache)"|bc| awk '{printf "%.0f", $0}'`
 utilize=`echo "scale=4; ($total-$free-$buffer-$cache)/$total*100"|bc|awk '{printf "%.2f", $0}'`
-SQLINSERT="insert into memory(free,used,buffer,cache,total,utilize,recordTime,server) values($free,$used,$buffer,$cache,$total,$utilize,\"$recordTime\",4);"
+SQLINSERT="insert into memory(free,used,buffer,cache,total,utilize,recordTime,server) values($free,$used,$buffer,$cache,$total,$utilize,\"$recordTime\",\"localcent\");"
 echo $SQLINSERT
 insert $SQLINSERT
