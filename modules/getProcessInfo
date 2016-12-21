@@ -1,0 +1,17 @@
+#! /bin/bash
+
+function getProcessInfo(){
+processName=`echo $1`
+result=$(
+#find rows ending with processName
+       ps -ef|grep  $processName$ \
+       | /usr/bin/awk '{{print " "$2" "}
+       }')
+echo ${result}
+}
+
+
+
+
+
+
