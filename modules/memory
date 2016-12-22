@@ -2,46 +2,52 @@
 shells=/home/suguannan/MyShells
 PATH=$PATH:$shells
 . $shells/insert
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
-result=$(/bin/cat /proc/meminfo \
-        | /bin/sed 's/':'/''/' \
-	| /usr/bin/awk -F' '   \
+server=localcent
+dateCmd=`which date`
+catCmd=`which cat`
+sedCmd=`which sed`
+awkCmd=`which awk`
+echoCmd=`which echo`
+recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
+result=$($catCmd /proc/meminfo \
+        | $sedCmd 's/':'/''/' \
+	| $awkCmd -F' '   \
        '{if($1=="MemTotal"||$1=="MemFree"||$1=="Buffers"||$1=="Cached"||$1=="Active"||$1=="MemAvailable") print "\""$1"\":\""$2"\","}' \
-	| /bin/sed 'N;$s/,\n/\n/;P;D' \
+	| $sedCmd 'N;$s/,\n/\n/;P;D' \
         )
 space=' '
 left_brace='{'
 right_brace='}'
 quote='\"'
 colon=':'
-temp_str=$(/bin/echo $result  \
-        | /bin/sed "s/$space$left_brace$right_brace//g"  \
-        | /bin/sed "s/$quote//g"  \
-        | /usr/bin/awk -F','   \
+temp_str=$($echoCmd $result  \
+        | $sedCmd "s/$space$left_brace$right_brace//g"  \
+        | $sedCmd "s/$quote//g"  \
+        | $awkCmd -F','   \
          '{for(iCnt=1;iCnt<=NF;iCnt++) print ""$iCnt""}'  \
          )
-total=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+total=$($echoCmd $temp_str | $awkCmd  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemTotal/) print ""$iCnt""}}' \
-        | /usr/bin/awk -F':'   \
+        | $awkCmd -F':'   \
          '{print ""$2""}'  \
          )
-free=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+free=$($echoCmd $temp_str | $awkCmd  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemFree/) print ""$iCnt""}}' \
-        | /usr/bin/awk -F':'   \
+        | $awkCmd -F':'   \
          '{print ""$2""}'  \
          )
-buffer=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+buffer=$($echoCmd $temp_str | $awkCmd  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Buffers/) print ""$iCnt""}}' \
-        | /usr/bin/awk -F':'   \
+        | $awkCmd -F':'   \
          '{print ""$2""}'  \
          )
-cache=$(/bin/echo $temp_str | /usr/bin/awk  -F' '   \
+cache=$($echoCmd $temp_str | $awkCmd  -F' '   \
          '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Cache/) print ""$iCnt""}}' \
-        | /usr/bin/awk -F':'   \
+        | $awkCmd -F':'   \
          '{print ""$2""}'  \
          )
-used=`echo "scale=0; ($total-$free-$buffer-$cache)"|bc| awk '{printf "%.0f", $0}'`
-utilize=`echo "scale=4; ($total-$free-$buffer-$cache)/$total*100"|bc|awk '{printf "%.2f", $0}'`
-SQLINSERT="insert into memory(free,used,buffer,cache,total,utilize,recordTime,server) values($free,$used,$buffer,$cache,$total,$utilize,\"$recordTime\",\"localcent\");"
-echo $SQLINSERT
+used=`$echoCmd "scale=0; ($total-$free-$buffer-$cache)"|bc| $awkCmd '{printf "%.0f", $0}'`
+utilize=`$echoCmd "scale=4; ($total-$free-$buffer-$cache)/$total*100"|bc|$awkCmd '{printf "%.2f", $0}'`
+SQLINSERT="insert into memory(free,used,buffer,cache,total,utilize,recordTime,server) values($free,$used,$buffer,$cache,$total,$utilize,\"$recordTime\",\"$server\");"
+$echoCmd $SQLINSERT
 insert $SQLINSERT

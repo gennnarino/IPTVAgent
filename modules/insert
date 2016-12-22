@@ -1,7 +1,8 @@
 #!/bin/bash
+echoCmd=`which echo`
 function insert()
  { 
-insert=`echo $@`
+insert=`$echoCmd $@`
 Host=localhost
 User=root
 Password=111111
@@ -11,7 +12,7 @@ MSG=`$MYSQL -h$Host -u$User -p$Password<< EOF
         $insert
         exit
         EOF`    
-echo $MSG
-echo "finished"
+$echoCmd $MSG
+$echoCmd "finished"
 }
 

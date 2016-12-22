@@ -15,4 +15,3 @@ for name in ${names[*]}
       echo $name
       getProcessInfo $name
    done
-

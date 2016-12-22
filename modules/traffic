@@ -2,10 +2,16 @@
 shells=/home/suguannan/MyShells
 PATH=$PATH:$shells
 . $shells/insert
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
-rst=$(/bin/cat /proc/net/dev \
-        |sed 's/':'/''/' \
-	| /usr/bin/awk  -F' '  ' NR>2 {   
+server=localcent
+dateCmd=`which date`
+catCmd=`which cat`
+sedCmd=`which sed`
+awkCmd=`which awk`
+echoCmd=`which echo`
+recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
+rst=$($catCmd /proc/net/dev \
+        |$sedCmd 's/':'/''/' \
+	|$awkCmd  -F' '  ' NR>2 {   
         port="\""$1"\""" "port;  
         byteIn=$2" "byteIn;
         byteOut=$10" "byteOut;
@@ -13,22 +19,22 @@ rst=$(/bin/cat /proc/net/dev \
         packetOut=$11" "packetOut
          }END{print port",";print byteIn",";print byteOut",";print packetIn",";print packetOut}' \
 	)
-port=$(echo $rst | awk -F ',' '{print $1}')
-byteIn=$(echo $rst | awk -F ',' '{print $2}')
-byteOut=$(echo $rst | awk -F ',' '{print $3}')
-packetIn=$(echo $rst | awk -F ',' '{print $4}')
-packetOut=$(echo $rst | awk -F ',' '{print $5}')
+port=$($echoCmd $rst | $awkCmd -F ',' '{print $1}')
+byteIn=$($echoCmd $rst | $awkCmd -F ',' '{print $2}')
+byteOut=$($echoCmd $rst | $awkCmd -F ',' '{print $3}')
+packetIn=$($echoCmd $rst | $awkCmd -F ',' '{print $4}')
+packetOut=$($echoCmd $rst | $awkCmd -F ',' '{print $5}')
 #define parameter arrays
-portArray=(`echo ${port%?}`)
-byteInArray=(`echo ${byteIn%?}`)
-byteOutArray=(`echo ${byteOut%?}`)
-packetInArray=(`echo ${packetIn%?}`)
-packetOutArray=(`echo ${packetOut%?}`)
+portArray=(`$echoCmd ${port%?}`)
+byteInArray=(`$echoCmd ${byteIn%?}`)
+byteOutArray=(`$echoCmd ${byteOut%?}`)
+packetInArray=(`$echoCmd ${packetIn%?}`)
+packetOutArray=(`$echoCmd ${packetOut%?}`)
 #iterate the arrays
 len=${#portArray[@]}
 for((i=0;i<$len;i++))
    do 
-      SQLINSERT="insert into traffic(port,byteIn,byteOut,packetIn,packetOut,recordTime,server) values(${portArray[i]},${byteInArray[i]},${byteOutArray[i]},${packetInArray[i]},${packetOutArray[i]},\"$recordTime\",\"localcent\");"
-      echo $SQLINSERT
+      SQLINSERT="insert into traffic(port,byteIn,byteOut,packetIn,packetOut,recordTime,server) values(${portArray[i]},${byteInArray[i]},${byteOutArray[i]},${packetInArray[i]},${packetOutArray[i]},\"$recordTime\",\"$server\");"
+      $echoCmd $SQLINSERT
       insert $SQLINSERT
    done
