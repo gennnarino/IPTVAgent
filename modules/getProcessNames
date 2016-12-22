@@ -1,12 +1,13 @@
 #! /bin/bash
-shells=/home/suguannan/MyShells
-PATH=$PATH:$shells
+shells=$(readlink -f .)
 . $shells/getProcessInfo
 #initialize parameters to login mysql
+hostnameCmd=`which hostname`
+server=`$hostnameCmd`
 Host=localhost
 User=root
 Password=111111
-sql="select processName from iptvm.process;"
+sql="select processName from iptvm.process where server ='$server';"
 mysql=`which mysql`
 MYSQL="$mysql -h$Host -u$User -p$Password --default-character-set=utf8 -A -N"
 names=("$($MYSQL -e "$sql")")    

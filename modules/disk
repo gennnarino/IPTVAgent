@@ -1,8 +1,8 @@
 #!/bin/bash
-shells=/home/suguannan/MyShells
-PATH=$PATH:$shells
+shells=$(readlink -f .)
 . $shells/insert
-server=localcent
+hostnameCmd=`which hostname`
+server=`$hostnameCmd`
 awkCmd=`which awk`
 echoCmd=`which echo`
 dateCmd=`which date`

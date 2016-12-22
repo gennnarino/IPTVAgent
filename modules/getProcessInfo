@@ -1,8 +1,8 @@
 #! /bin/bash
-shells=/home/suguannan/MyShells
-PATH=$PATH:$shells
+shells=$(readlink -f .)
 . $shells/insert
-server=localcent
+hostnameCmd=`which hostname`
+server=`$hostnameCmd`
 grepCmd=`which grep`
 awkCmd=`which awk`
 catCmd=`which cat`
@@ -46,7 +46,17 @@ function getProcessInfo(){
 	|  $awkCmd '{{print $2}}'   \
 )
   #get process IO statistics 
-  procIO=$($catCmd ${fileProcIO})
+  readByte=$($catCmd ${fileProcIO}\
+        |$grepCmd ^read_bytes            \
+        | $sedCmd 's/':'/''/' \
+	 | $awkCmd '{print $2}'   \
+ )
+  writeByte=$($catCmd ${fileProcIO}\
+        |$grepCmd ^write_bytes            \
+        | $sedCmd 's/':'/''/' \
+	 |  $awkCmd '{print $2}'   \
+ )
+
   #calculate process CPU statistics 
   prevProcCPUUser=$($echoCmd ${prevProcCPU} | $awkCmd '{print $14}')
   prevProcCPUSystem=$($echoCmd ${prevProcCPU} | $awkCmd '{print $15}')
@@ -73,21 +83,10 @@ function getProcessInfo(){
   procCPUTotalP=`$echoCmd "scale=4;$diffProcCPUTotal/$diffCPUTotal*100"|bc |  $awkCmd '{printf "%.2f", $0}'` 
   ####calculate process Mem statistics 
   memoryP=`$echoCmd "scale=4;$RSS/$totalMem*100"|bc |  $awkCmd '{printf "%.2f", $0}'`
-  ####calculate process IO statistics 
-  readByte=$($catCmd ${procIO}\
-        |$grepCmd read_bytes            \
-        | $sedCmd 's/':'/''/' \
-	 | $awkCmd '{{print $2}}'   \
-)
-  writeByte=$($catCmd ${procIO}\
-        |$grepCmd write_bytes            \
-        | $sedCmd 's/':'/''/' \
-	 |  $awkCmd '{{print $2}}'   \
- )
   SQLINSERT="insert into process_info(processName,status,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$processName\",1,$procCPUUserP,$procCPUSystemP,$procCPUTotalP,$memoryP,$RSS,$readByte,$writeByte,\"$recordTime\",\"$server\");"
 else
 #When the process folder doesn't exist
-recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
+  recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
   SQLINSERT="insert into process_info(processName,status,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$processName\",0,0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
 
 fi
