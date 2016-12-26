@@ -1,0 +1,104 @@
+#! /bin/bash
+#get the real path of parent folder
+SOURCE="$0"
+while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
+shells=${DIR}
+. $shells/insert
+hostnameCmd=`which hostname`
+server=`$hostnameCmd`
+grepCmd=`which grep`
+awkCmd=`which awk`
+catCmd=`which cat`
+sedCmd=`which sed`
+echoCmd=`which echo`
+sleepCmd=`which sleep`
+dfCmd=`which df`
+#collect realtime data
+##get cpu statistics for the first time
+prevCPU=(`$sedCmd -n 's/^cpu\s//p' /proc/stat`)
+prevTOTAL=0
+for VALUE in "${prevCPU[@]}"; 
+  do
+    let "prevTOTAL=$prevTOTAL+$VALUE"
+  done
+prevIdleTime=${prevCPU[3]}
+prevWait=${prevCPU[4]}
+prevSteal=${prevCPU[7]}
+##sleep for a while
+$sleepCmd 1
+##get cpu statistics for the second time
+CPU=(`$sedCmd -n 's/^cpu\s//p' /proc/stat`)
+TOTAL=0
+for VALUE in "${CPU[@]}"; 
+  do
+    let "TOTAL=$TOTAL+$VALUE"
+  done
+idleTime=${CPU[3]}
+wait=${CPU[4]}
+steal=${CPU[7]}
+##get 1min average load
+numberOfCores=$($grepCmd -c 'processor' /proc/cpuinfo)
+if [ $numberOfCores -eq 0 ]; then
+	numberOfCores=1
+fi
+load1=$($catCmd /proc/loadavg | $awkCmd '{print ($1*100)/'$numberOfCores' }')
+##get memory statistics and calculate memory util rate
+result=$($catCmd /proc/meminfo \
+        | $sedCmd 's/':'/''/' \
+	| $awkCmd -F' '   \
+       '{if($1=="MemTotal"||$1=="MemFree"||$1=="Buffers"||$1=="Cached"||$1=="Active"||$1=="MemAvailable") print "\""$1"\":\""$2"\","}' \
+	| $sedCmd 'N;$s/,\n/\n/;P;D' \
+        )
+space=' '
+left_brace='{'
+right_brace='}'
+quote='\"'
+colon=':'
+temp_str=$($echoCmd $result  \
+        | $sedCmd "s/$space$left_brace$right_brace//g"  \
+        | $sedCmd "s/$quote//g"  \
+        | $awkCmd -F','   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++) print ""$iCnt""}'  \
+         )
+total=$($echoCmd $temp_str | $awkCmd  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemTotal/) print ""$iCnt""}}' \
+        | $awkCmd -F':'   \
+         '{print ""$2""}'  \
+         )
+free=$($echoCmd $temp_str | $awkCmd  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemFree/) print ""$iCnt""}}' \
+        | $awkCmd -F':'   \
+         '{print ""$2""}'  \
+         )
+buffer=$($echoCmd $temp_str | $awkCmd  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Buffers/) print ""$iCnt""}}' \
+        | $awkCmd -F':'   \
+         '{print ""$2""}'  \
+         )
+cache=$($echoCmd $temp_str | $awkCmd  -F' '   \
+         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Cache/) print ""$iCnt""}}' \
+        | $awkCmd -F':'   \
+         '{print ""$2""}'  \
+         )
+memoryUtilize=`$echoCmd "scale=4; ($total-$free-$buffer-$cache)/$total*100"|bc|$awkCmd '{printf "%.2f", $0}'`
+##get disk statistics and calculate disk util rate
+rst=$($dfCmd -k | $awkCmd 'NR>1{a+=$4;b+=$3;c+=$2}END{print a","b","c}')
+used=$($echoCmd $rst | $awkCmd -F ',' '{print $2}')
+used=`$echoCmd "scale=2;$used/1024/1024"|bc| $awkCmd '{printf "%.2f", $0}'`
+total=$($echoCmd $rst | $awkCmd -F ',' '{print $3}')
+total=`$echoCmd "scale=2;$total/1024/1024"|bc| $awkCmd '{printf "%.2f", $0}'`
+diskUtilize=`$echoCmd "scale=4;$used/$total*100"|bc| $awkCmd '{printf "%.2f", $0}'`
+##calculate the cpu util rate
+let "diffTOTAL=$TOTAL-$prevTOTAL"
+let "diffIdleTime=$idleTime-$prevIdleTime"
+let "diffWait=$wait-$prevWait"
+let "diffSteal=$steal-$prevSteal"
+cpuUtilize=`$echoCmd "scale=4;(1-$diffIdleTime/$diffTOTAL-$diffWait/$diffTOTAL-$diffSteal/$diffTOTAL)*100"|bc| $awkCmd '{printf "%.2f", $0}'`
+SQLINSERT="insert into realtime(cpuUtilize,memoryUtilize,diskUtilize,load1,server) values($cpuUtilize,$memoryUtilize,$diskUtilize,$load1,\"$server\");"
+$echoCmd $SQLINSERT
+insert $SQLINSERT
