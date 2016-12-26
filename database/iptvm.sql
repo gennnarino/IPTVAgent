@@ -1,6 +1,6 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2016/12/21 10:34:26                          */
+/* Created on:     2016/12/26 15:00:00                          */
 /*==============================================================*/
 drop database if exists iptvm;
 create database iptvm default character set utf8 collate utf8_general_ci;
@@ -47,6 +47,8 @@ drop table if exists product;
 drop table if exists product_channel;
 
 drop table if exists productcard;
+
+drop table if exists realtime;
 
 drop table if exists server;
 
@@ -382,13 +384,13 @@ create table process_info
 (
    processName          varchar(64) not null comment '进程名',
    status               bool not null comment '进程状态',
-   user                 decimal(8,2) comment '用户态cpu消耗',
-   system               decimal(8,2) comment '系统态cpu消耗',
-   total                decimal(8,2) comment '总cpu消耗',
-   memory               decimal(8,2) comment '内存消耗',
-   rss                  decimal(8,2) comment '虚拟内存消耗',
-   readByte             int comment '进程io读字节',
-   writeByte            int comment '进程io写字节',
+   user                 decimal(8,2) not null comment '用户态cpu消耗百分比',
+   system               decimal(8,2) not null comment '系统态cpu消耗百分比',
+   total                decimal(8,2) not null comment '总cpu消耗百分比',
+   memory               decimal(8,2) not null comment '总内存消耗百分比',
+   rss                  int not null comment '物理内存消耗（KB）',
+   readByte             int not null comment '进程io读字节',
+   writeByte            int not null comment '进程io写字节',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (processName, recordTime, server)
@@ -447,6 +449,21 @@ charset = UTF8
 engine = InnoDB;
 
 alter table productcard comment '产品包充值卡';
+
+/*==============================================================*/
+/* Table: realtime                                              */
+/*==============================================================*/
+create table realtime
+(
+   server               varchar(128) not null comment '服务器',
+   cpuUtilize           decimal(8,2) not null comment 'CPU利用率',
+   memoryUtilize        decimal(8,2) not null comment '内存利用率',
+   diskUtilize          decimal(8,2) not null comment '磁盘利用率',
+   load1                decimal(8,2) not null comment '1分钟负载',
+   primary key (server)
+);
+
+alter table realtime comment '实时';
 
 /*==============================================================*/
 /* Table: server                                                */
@@ -575,6 +592,9 @@ alter table productcard add constraint FK_account_productcard foreign key (accou
 
 alter table productcard add constraint FK_product_productcard foreign key (productId)
       references product (productId) on delete cascade on update restrict;
+
+alter table realtime add constraint FK_server_realtime foreign key (server)
+      references server (serverName) on delete restrict on update restrict;
 
 alter table stbbind add constraint FK_stbbind foreign key (productId)
       references product (productId) on delete cascade on update cascade;
