@@ -99,6 +99,6 @@ let "diffIdleTime=$idleTime-$prevIdleTime"
 let "diffWait=$wait-$prevWait"
 let "diffSteal=$steal-$prevSteal"
 cpuUtilize=`$echoCmd "scale=4;(1-$diffIdleTime/$diffTOTAL-$diffWait/$diffTOTAL-$diffSteal/$diffTOTAL)*100"|bc| $awkCmd '{printf "%.2f", $0}'`
-SQLINSERT="insert into realtime(cpuUtilize,memoryUtilize,diskUtilize,load1,server) values($cpuUtilize,$memoryUtilize,$diskUtilize,$load1,\"$server\");"
+SQLINSERT="insert into realtime(cpuUtilize,memoryUtilize,diskUtilize,load1,server) values($cpuUtilize,$memoryUtilize,$diskUtilize,$load1,\"$server\")ON DUPLICATE KEY update cpuUtilize=$cpuUtilize,memoryUtilize=$memoryUtilize,diskUtilize=$diskUtilize,load1=$load1;"
 $echoCmd $SQLINSERT
 insert $SQLINSERT
