@@ -76,7 +76,7 @@ softIrqP=`$echoCmd "scale=4;$diffSoftIrq/$diffTOTAL*100"|bc| $awkCmd '{printf "%
 niceP=`$echoCmd "scale=4;$diffNice/$diffTOTAL*100"|bc| $awkCmd '{printf "%.2f", $0}'`
 stealP=`$echoCmd "scale=4;$diffSteal/$diffTOTAL*100"|bc| $awkCmd '{printf "%.2f", $0}'`
 guestP=`$echoCmd "scale=4;$diffGuest/$diffTOTAL*100"|bc| $awkCmd '{printf "%.2f", $0}'`
-if(`$testCmd -n "$guestP"`); 
+if(`$testCmd -z "$guestP"`); 
 then guestP=0 
 fi
 #Calculate the util rate of CPU
