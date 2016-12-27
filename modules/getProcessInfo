@@ -28,7 +28,7 @@ function getProcessInfo(){
        | $awkCmd '{{print " "$2" "}
        }')
   folder=$($echoCmd "/proc/"$PID|$sedCmd s/[[:space:]]//g)
-  if (`$testCmd -d "$folder"`);then
+  if (`$testCmd -d "$folder"`&&`$testCmd -n "$PID"`);then
 #When process folder exists.....
   fileProcCPU=$($echoCmd "/proc/"$PID"/stat"|$sedCmd s/[[:space:]]//g)
   fileProcMem=$($echoCmd "/proc/"$PID"/status"|$sedCmd s/[[:space:]]//g)
