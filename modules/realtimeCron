@@ -1,4 +1,11 @@
 #! /bin/bash
+trueCmd=`which true`
+sleepCmd=`which sleep`
+psCmd=`which ps`
+grepCmd=`which grep`
+awkCmd=`which awk`
+testCmd=`which test`
+killCmd=`which kill`
 #get the real path of parent folder
  SOURCE="$0"
  while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -8,8 +15,19 @@
  done
  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
  shells=${DIR}
-trueCmd=`which true`
-sleepCmd=`which sleep`
+#judge if there is another existing process executing this shell script, if so kill that process
+function getExistingPIDs(){
+selfPID="$1"
+scriptFile="$2"
+$psCmd -ef | $grepCmd "${scriptFile}" | $grepCmd -v "grep" | $awkCmd "{ if(\$2!=$selfPID) print \$2 }"
+}
+selfPID="$$"
+scriptFile="$0"
+existingPid=`getExistingPIDs $selfPID "$scriptFile"`
+if [ ! -z "$existingPid" ]; then
+  $killCmd $existingPid
+  echo ${existingPid}
+fi
 #continuously call the realtime shell script
 while [ $trueCmd ]; do
 $sleepCmd 1s
