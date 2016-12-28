@@ -9,7 +9,6 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 #execute shellscripts
 shells=${DIR}
-echo ${shells}
 shCmd=`which sh`
 $shCmd $shells/memory &
 $shCmd $shells/load_avg &
