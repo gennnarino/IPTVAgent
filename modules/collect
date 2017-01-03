@@ -1,4 +1,10 @@
 #!/bin/bash
+shCmd=`which sh`
+dateCmd=`which date`
+echoCmd=`which echo`
+psCmd=`which ps`
+grepCmd=`which grep`
+testCmd=`which test`
 #get the real path of parent folder
 SOURCE="$0"
 while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -7,10 +13,22 @@ while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a syml
     [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-#execute shellscripts
 shells=${DIR}
-echo ${shells}
-shCmd=`which sh`
+#judge if there is another existing process executing this shell script, if so exit current process
+function getExistingPIDs(){
+selfPID="$1"
+scriptFile="$2"
+$psCmd -ef | $grepCmd "${scriptFile}" | $grepCmd -v "grep" | $awkCmd "{ if(\$2!=$selfPID) print \$2 }"
+}
+selfPID="$$"
+scriptFile="$0"
+existingPid=`getExistingPIDs $selfPID "$scriptFile"`
+if (`$testCmd-n "$existingPid"`); then
+  exit 0
+fi
+#execute shellscripts
+recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
+echo "[$recordTime]:Start a new round of collecting. PID=$$">> $shells/collect.log
 $shCmd $shells/memory & 
 $shCmd $shells/load_avg &
 $shCmd $shells/disk &
