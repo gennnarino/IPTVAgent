@@ -34,6 +34,7 @@ $shCmd $shells/load_avg &
 $shCmd $shells/disk &
 $shCmd $shells/cpu_time &
 $shCmd $shells/traffic &
+$shCmd $shells/mysql_info &
 $shCmd $shells/getProcessNames &
 $shCmd $shells/io &
 $shCmd $shells/realtimeCron &
