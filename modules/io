@@ -1,0 +1,129 @@
+#!/bin/bash
+hostnameCmd=`which hostname`
+server=`$hostnameCmd`
+grepCmd=`which grep`
+awkCmd=`which awk`
+catCmd=`which cat`
+sedCmd=`which sed`
+echoCmd=`which echo`
+psCmd=`which ps`
+sleepCmd=`which sleep`
+dateCmd=`which date`
+testCmd=`which test`
+#get the real path of parent folder
+SOURCE="$0"
+while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
+shells=${DIR}
+. $shells/insert
+# Get the IO statistics for the first time
+rstPrev=$($catCmd /proc/diskstats \
+        |$sedCmd 's/':'/''/' \
+	|$awkCmd  -F' '  '  {   
+        deviceName="\""$3"\""" "deviceName;  
+        rd_merges=$5" "rd_merges;
+        wr_merges=$9" "wr_merges;
+        rd_ios=$4" "rd_ios;
+        wr_ios=$8" "wr_ios;
+        rd_sectors=$6" "rd_sectors;
+        wr_sectors=$10" "wr_sectors;
+        ticks=$13" "ticks;
+        rd_ticks=$7" "rd_ticks;
+        wr_ticks=$11" "wr_ticks;
+         }END{print deviceName",";print rd_merges",";print wr_merges",";print rd_ios",";print wr_ios",";print rd_sectors",";print wr_sectors",";print ticks",";print rd_ticks",";print wr_ticks}' \
+	)
+#sleep for a while 
+$sleepCmd 1s
+# Get the IO statistics for the second time
+recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
+rst=$($catCmd /proc/diskstats \
+        |$sedCmd 's/':'/''/' \
+	|$awkCmd  -F' '  '  {   
+        deviceName="\""$3"\""" "deviceName;  
+        rd_merges=$5" "rd_merges;
+        wr_merges=$9" "wr_merges;
+        rd_ios=$4" "rd_ios;
+        wr_ios=$8" "wr_ios;
+        rd_sectors=$6" "rd_sectors;
+        wr_sectors=$10" "wr_sectors;
+       ticks=$13" "ticks;
+        rd_ticks=$7" "rd_ticks;
+        wr_ticks=$11" "wr_ticks;
+         }END{print deviceName",";print rd_merges",";print wr_merges",";print rd_ios",";print wr_ios",";print rd_sectors",";print wr_sectors",";print ticks",";print rd_ticks",";print wr_ticks}' \
+	)
+#Process the IO statistics gathered at the first time
+deviceNamePrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $1}')
+rd_mergesPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $2}')
+wr_mergesPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $3}')
+rd_iosPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $4}')
+wr_iosPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $5}')
+rd_sectorsPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $6}')
+wr_sectorsPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $7}')
+ticksPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $8}')
+rd_ticksPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $9}')
+wr_ticksPrev=$($echoCmd $rstPrev | $awkCmd -F ',' '{print $10}')
+#construct arrays for the first-time data 
+deviceNamePrevArray=(`$echoCmd ${deviceNamePrev%?}`)
+rd_mergesPrevArray=(`$echoCmd ${rd_mergesPrev%?}`)
+wr_mergesPrevArray=(`$echoCmd ${wr_mergesPrev%?}`)
+rd_iosPrevArray=(`$echoCmd ${rd_iosPrev%?}`)
+wr_iosPrevArray=(`$echoCmd ${wr_iosPrev%?}`)
+rd_sectorsPrevArray=(`$echoCmd ${rd_sectorsPrev%?}`)
+wr_sectorsPrevArray=(`$echoCmd ${wr_sectorsPrev%?}`)
+ticksPrevArray=(`$echoCmd ${ticksPrev%?}`)
+rd_ticksPrevArray=(`$echoCmd ${rd_ticksPrev%?}`)
+wr_ticksPrevArray=(`$echoCmd ${wr_ticksPrev%?}`)
+#Process the IO statistics gathered at the second time
+deviceName=$($echoCmd $rst | $awkCmd -F ',' '{print $1}')
+rd_merges=$($echoCmd $rst | $awkCmd -F ',' '{print $2}')
+wr_merges=$($echoCmd $rst | $awkCmd -F ',' '{print $3}')
+rd_ios=$($echoCmd $rst | $awkCmd -F ',' '{print $4}')
+wr_ios=$($echoCmd $rst | $awkCmd -F ',' '{print $5}')
+rd_sectors=$($echoCmd $rst | $awkCmd -F ',' '{print $6}')
+wr_sectors=$($echoCmd $rst | $awkCmd -F ',' '{print $7}')
+ticks=$($echoCmd $rst | $awkCmd -F ',' '{print $8}')
+rd_ticks=$($echoCmd $rst | $awkCmd -F ',' '{print $9}')
+wr_ticks=$($echoCmd $rst | $awkCmd -F ',' '{print $10}')
+#construct arrays for the second-time data 
+deviceNameArray=(`$echoCmd ${deviceName%?}`)
+rd_mergesArray=(`$echoCmd ${rd_merges%?}`)
+wr_mergesArray=(`$echoCmd ${wr_merges%?}`)
+rd_iosArray=(`$echoCmd ${rd_ios%?}`)
+wr_iosArray=(`$echoCmd ${wr_ios%?}`)
+rd_sectorsArray=(`$echoCmd ${rd_sectors%?}`)
+wr_sectorsArray=(`$echoCmd ${wr_sectors%?}`)
+ticksArray=(`$echoCmd ${ticks%?}`)
+rd_ticksArray=(`$echoCmd ${rd_ticks%?}`)
+wr_ticksArray=(`$echoCmd ${wr_ticks%?}`)
+#calculate and upload IO statistics
+len=${#deviceNameArray[@]}
+for((i=$len-1;i>-1;i--))
+   do 
+      let "mergedRead=${rd_mergesArray[i]}-${rd_mergesPrevArray[i]}"
+      let "mergedWrite=${wr_mergesArray[i]}-${wr_mergesPrevArray[i]}"
+      let "readRequest=${rd_iosArray[i]}-${rd_iosPrevArray[i]}"
+      let "writeRequest=${wr_iosArray[i]}-${wr_iosPrevArray[i]}"
+      let "sectorRead=${rd_sectorsArray[i]}-${rd_sectorsPrevArray[i]}"
+      let "sectorWrite=${wr_sectorsArray[i]}-${wr_sectorsPrevArray[i]}"
+      let "n_ios=(${rd_iosArray[i]}+${wr_iosArray[i]})-(${rd_iosPrevArray[i]}+${wr_iosPrevArray[i]})"
+      let "n_ticks=(${rd_ticksArray[i]}+${wr_ticksArray[i]})-(${rd_ticksPrevArray[i]}+${wr_ticksPrevArray[i]})"
+      let "n_kbytes=((${rd_sectorsArray[i]}+${wr_sectorsArray[i]})-(${rd_sectorsPrevArray[i]}+${wr_sectorsPrevArray[i]}))/2" 
+      let "ticks=${ticksArray[i]}-${ticksPrevArray[i]}"   
+      if (`$testCmd "${n_ios}" -eq "0"`);then
+      sectorAverage=0
+      await=0
+      scvtm=0
+      else
+      sectorAverage=`$echoCmd "scale=4;$n_kbytes/$n_ios"|bc | $awkCmd '{printf "%.2f", $0}'` 
+      await=`$echoCmd "scale=4;$n_ticks/$n_ios"|bc | $awkCmd '{printf "%.2f", $0}'` 
+      scvtm=`$echoCmd "scale=4;$ticks/$n_ios"|bc | $awkCmd '{printf "%.2f", $0}'` 
+      fi
+      utilize=`$echoCmd "scale=4;$ticks/10"|bc | $awkCmd '{printf "%.2f", $0}'` 
+      SQLINSERT="insert into io(deviceName,mergedRead,mergedWrite,readRequest,writeRequest,sectorRead,sectorWrite,sectorAverage,await,scvtm,utilize,recordTime,server) values(${deviceNameArray[i]},$mergedRead,$mergedWrite,$readRequest,$writeRequest,$sectorRead,$sectorWrite,$sectorAverage,$await,$scvtm,$utilize,\"$recordTime\",\"$server\");"
+      $echoCmd $SQLINSERT
+      insert $SQLINSERT
+   done

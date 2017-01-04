@@ -35,5 +35,6 @@ $shCmd $shells/disk &
 $shCmd $shells/cpu_time &
 $shCmd $shells/traffic &
 $shCmd $shells/getProcessNames &
+$shCmd $shells/io &
 $shCmd $shells/realtimeCron &
 exit 0
