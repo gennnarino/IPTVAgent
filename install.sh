@@ -7,11 +7,11 @@ installUbuntu="apt-get -y install "
 #install the dependent commands
 SystemName=$(set `$headCmd -1 /etc/issue`;$echoCmd $1)
 if(`$testCmd $SystemName = 'CentOS'`);then
-#$installCentOS "awk" &
-#$installCentOS "bc" &
-#$installCentOS "sed" &
-#$installCentOS "curl" &
-#$installCentOS "redis" &
+$installCentOS "awk" &
+$installCentOS "bc" &
+$installCentOS "sed" &
+$installCentOS "curl" &
+$installCentOS "redis" &
 echo
 fi
 if(`$testCmd $SystemName = 'Ubuntu'`);then
