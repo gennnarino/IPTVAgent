@@ -15,13 +15,12 @@ hostnameCmd=`which hostname`
 server=`$hostnameCmd`
 Host=localhost
 User=root
-Password=111111
 sql="select processName from iptvm.process where server ='$server';"
 mysql=`which mysql`
-MYSQL="$mysql -h$Host -u$User -p$Password --default-character-set=utf8 -A -N"
+MYSQL="$mysql -h$Host -u$User --default-character-set=utf8 -A -N"
 names=("$($MYSQL -e "$sql")")    
 for name in ${names[*]}
    do
       echo $name
-      getProcessInfo $name
+      getProcessInfo $name &
    done
