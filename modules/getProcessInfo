@@ -20,11 +20,16 @@ psCmd=`which ps`
 sleepCmd=`which sleep`
 dateCmd=`which date`
 testCmd=`which test`
+redisCmd=`which redis-cli`
 function getProcessInfo(){
-  processName=`$echoCmd $1`
+processName=`$echoCmd $1`
+processSource=`$redisCmd<<EOF
+hget process $processName
+exit
+EOF`
   PID=$(
-  #find rows ending with processName
-       $psCmd -ef|$grepCmd  $processName$ \
+  #find rows including processSource
+       $psCmd -ef|$grepCmd  $processSource |$grepCmd -v grep\
        | $awkCmd '{{print " "$2" "}
        }')
   folder=$($echoCmd "/proc/"$PID|$sedCmd s/[[:space:]]//g)
@@ -97,15 +102,7 @@ else
   recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
   SQLINSERT="insert into process_info(processName,status,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$processName\",0,0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
 
-fi
-  
+fi  
   $echoCmd $SQLINSERT
   insert $SQLINSERT
-
 }
-
-
-
-
-
-
