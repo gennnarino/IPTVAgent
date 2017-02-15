@@ -12,9 +12,9 @@ IPTVAgent is a agent tool,which can be used to gather system information, e.g. C
 
 IPTVAgent is available on GitHub, you can clone and install it as follows:
 
-  $ git clone https://github.com/LazarAngelov/IPTVAgent.git
-  $ cd IPTVAgent
-  $ ./install.sh
+  $ git clone https://github.com/LazarAngelov/IPTVAgent.git  
+  $ cd IPTVAgent  
+  $ ./install.sh  
 
 After installation, you may see these files in /usr/local/IPTVAgent folder:
 
