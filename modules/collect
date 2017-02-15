@@ -3,9 +3,12 @@
 # source cfg file
 . /usr/local/IPTVAgent/cfg/iptvagent.cfg
 
-if [ -d $tmpPath ]; then
-    rm $tmpPath/*
-fi
+for file in `ls $tmpPath`
+    do
+        if [ $file != 'realtime.tmp' ]; then
+            rm $tmpPath/$file
+        fi
+    done
 
 recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
 echo "[$recordTime] [INFO] Start a new round of collecting">> $logPath/iptvagent.log
