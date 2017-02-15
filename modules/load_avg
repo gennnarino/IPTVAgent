@@ -1,33 +1,24 @@
 #!/bin/bash
-#get the real path of parent folder
-SOURCE="$0"
-while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-shells=${DIR}
-. $shells/insert
-hostnameCmd=`which hostname`
-server=`$hostnameCmd`
-echoCmd=`which echo`
-grepCmd=`which grep`
-awkCmd=`which awk`
-catCmd=`which cat`
-dateCmd=`which date`
-numberOfCores=$($grepCmd -c 'processor' /proc/cpuinfo)
+
+# source functions
+. /usr/local/IPTVAgent/lib/functions
+
+server=`hostname`
+numberOfCores=$(grep -c 'processor' /proc/cpuinfo)
+
 if [ $numberOfCores -eq 0 ]; then
 	numberOfCores=1
 fi
-recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
-rst=$($catCmd /proc/loadavg | $awkCmd '{print ($1*100)/'$numberOfCores'"," ($2*100)/'$numberOfCores' "," ($3*100)/'$numberOfCores'"," $4 }')
-load1=$($echoCmd $rst|$awkCmd -F"," '{print $1}')
-load5=$($echoCmd $rst|$awkCmd -F"," '{print $2}')
-load15=$($echoCmd $rst|$awkCmd -F"," '{print $3}')
-processRun=$($echoCmd $rst|$awkCmd -F"," '{print $4}'|$awkCmd -F"/" '{print $1}')
-processTotal=$($echoCmd $rst|$awkCmd -F"," '{print $4}'|$awkCmd -F"/" '{print $2}')
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+rst=$(cat /proc/loadavg | awk '{print ($1*100)/'$numberOfCores'"," ($2*100)/'$numberOfCores' "," ($3*100)/'$numberOfCores'"," $4 }')
+load1=$(echo $rst|awk -F"," '{print $1}')
+load5=$(echo $rst|awk -F"," '{print $2}')
+load15=$(echo $rst|awk -F"," '{print $3}')
+processRun=$(echo $rst|awk -F"," '{print $4}'|awk -F"/" '{print $1}')
+processTotal=$(echo $rst|awk -F"," '{print $4}'|awk -F"/" '{print $2}')
+
 SQLINSERT="insert into loads(load1,load5,load15,processRun,processTotal,recordTime,server) values($load1,$load5,$load15,$processRun,$processTotal,\"$recordTime\",\"$server\");"
-$echoCmd $SQLINSERT
+
+echo $SQLINSERT
 insert $SQLINSERT
 

@@ -1,0 +1,104 @@
+#! /bin/bash
+
+#************************************************
+#   Created on 2017-02-13 by liuxiaohu 
+#
+#   Desc: Functions that iptvagent will use
+#************************************************
+
+# source configuration file
+. /usr/local/IPTVAgent/cfg/iptvagent.cfg
+
+insert() {
+    local RETVAL=0
+    local name=`basename $0`
+    local pid=$!
+    local identifier=${name}${pid}
+    MYSQL=`which mysql`
+    if [ $? -ne 0 ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] mysql is not installed" >> $logPath/iptvagent.log
+        exit 1
+    fi
+    local insert=`echo $@`
+    $MYSQL -h$RHOST -u$RUSER -p$RPASSWORD $RDATABASE -e"nowarning;$insert" >$tmpPath/${identifier}.tmp 2>&1
+    RETVAL=$?
+    sed -i '1d' $tmpPath/${identifier}.tmp
+    if [ $RETVAL -eq 0 ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] [$name] upload information successfully" >> $logPath/iptvagent.log
+    else
+        local MSG=`cat $tmpPath/${identifier}.tmp`
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] [$name] $MSG" >> $logPath/iptvagent.log
+    fi
+    return $RETVAL
+}
+
+# initialize the directories
+initDir() {
+    if [ ! -d $logPath ]; then
+        mkdir -p $logPath
+    fi
+    if [ ! -d $tmpPath ]; then
+        mkdir -p $tmpPath
+    fi
+}
+
+# remove tmp directories
+rmDir() {
+    if [ -d $tmpPath ]; then
+        rm -rf $tmpPath
+    fi
+}
+
+# start iptvagent
+startAgent(){
+    REDISSERVER=`which redis-server`
+    if [ $? -ne 0 ]; then
+        echo -e "[\033[1;31mERROR:\033[0m] redis is not installed"
+        return 1
+    fi
+    $REDISSERVER > /dev/null &
+    initDir
+    cp $crondPath/iptvagent /etc/cron.d/
+    $daemonPath/iptvagentd &
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] iptvagent start manually" >> $logPath/iptvagent.log
+    return 0
+}
+
+# stop iptvagent
+stopAgent(){
+    ps -ef|grep iptvagentd|grep -v grep|awk '{print $2}'|xargs kill -9
+    if [ -f /etc/cron.d/iptvagent ]; then
+        rm /etc/cron.d/iptvagent
+    fi
+    rmDir
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] iptvagent stop manually" >> $logPath/iptvagent.log
+    return 0
+}
+
+RES_COL=60
+MOVE_TO_COL="echo -en \\033[${RES_COL}G"
+SETCOLOR_SUCCESS="echo -en \\033[1;32m"
+SETCOLOR_FAILURE="echo -en \\033[1;31m"
+SETCOLOR_NORMAL="echo -en \\033[0;39m"
+
+echo_success() {
+    $MOVE_TO_COL
+    echo -n "["
+    $SETCOLOR_SUCCESS
+    echo -n $"  OK  "
+    $SETCOLOR_NORMAL
+    echo -n "]"
+    echo -ne "\r"
+    return 0
+}
+
+echo_failure() {
+    $MOVE_TO_COL
+    echo -n "["
+    $SETCOLOR_FAILURE
+    echo -n $"  FAILED  "
+    $SETCOLOR_NORMAL
+    echo -n "]"
+    echo -ne "\r"
+    return 1
+}

@@ -1,0 +1,12 @@
+#! /bin/bash
+
+# source cfg file
+. /usr/local/IPTVAgent/cfg/iptvagent.cfg
+
+#continuously call the realtime shell script
+while true 
+do
+    sleep $realtimeInterval
+    $modulePath/realtime &
+done
+

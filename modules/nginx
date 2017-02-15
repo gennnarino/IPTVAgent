@@ -1,0 +1,27 @@
+#! /bin/bash
+
+# source functions
+. /usr/local/IPTVAgent/lib/functions
+
+exec 2>/dev/null
+server=`hostname`
+
+#get nginx status
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+result=$(echo `curl http://127.0.0.1/nginx_status`)
+
+if (`test -n "$result"`); then
+accept=$(echo $result|awk 'NR=4{print $8}')
+handle=$(echo $result|awk 'NR=4{print $9}')
+active=$(echo $result|awk 'NR=4{print $3}')
+request=$(echo $result|awk 'NR=4{print $10}')
+readRequest=$(echo $result|awk 'NR=4{print $12}')
+writeRequest=$(echo $result|awk 'NR=4{print $14}')
+wait=$(echo $result|awk 'NR=4{print $16}')
+qps=0
+responseTime=0
+
+SQLINSERT="insert into nginx(accept,handle,request,active,readRequest,writeRequest,wait,readByte,writeByte,wait,qps,responseTime,recordTime,server) values($accept,$handle,$request,$active,$readRequest,$writeRequest,$wait,-1,-1,\"$recordTime\",\"$server\");"
+fi
+
+echo $SQLINSERT

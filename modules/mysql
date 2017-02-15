@@ -1,0 +1,49 @@
+#! /bin/bash
+
+# source cfg file
+. /usr/local/IPTVAgent/cfg/iptvagent.cfg
+
+# source functions
+. $libPath/functions
+
+MYSQL=`which mysql`
+server=`hostname`
+
+#Bytes_received,Bytes_sent,Com_commit,Com_rollback,Questions,Threads_connected,Threads_running
+select="show global status where \`variable_name\` = 'Threads_connected' or \`variable_name\` = 'Threads_running' or \`variable_name\` = 'Questions' or \`variable_name\` = 'Com_commit' or \`variable_name\` = 'Com_rollback' or \`variable_name\` = 'Bytes_received' or \`variable_name\` = 'Bytes_sent';"
+
+#get mysql info for the first time
+resultPrev="$($MYSQL -h$LHOST -u$LUSER -p$LPASSWORD -N -e "$select")"
+
+#sleep for a second 
+sleep 1s
+
+#get mysql info for the second time
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+result="$($MYSQL -h$LHOST -u$LUSER -p$LPASSWORD -N -e "$select")"
+
+if (`test -n "$resultPrev"`&&`test -n "$result"`);then
+#if results not null, process the results acquired
+bytesReceivedPrev=$(echo $resultPrev | awk '{print $2}')
+bytesReceived=$(echo $result | awk '{print $2}')
+bytesSentPrev=$(echo $resultPrev | awk '{print $4}')
+bytesSent=$(echo $result | awk '{print $4}')
+com_commitPrev=$(echo $resultPrev | awk '{print $6}')
+com_commit=$(echo $result | awk '{print $6}')
+com_rollbackPrev=$(echo $resultPrev | awk '{print $8}')
+com_rollback=$(echo $result | awk '{print $8}')
+questionsPrev=$(echo $resultPrev | awk '{print $10}')
+questions=$(echo $result | awk '{print $10}')
+let "receiveTraffic=$bytesReceived-$bytesReceivedPrev"
+let "sendTraffic=$bytesSent-$bytesSentPrev"
+let "qps=$questions-$questionsPrev"
+let "tps=($com_commit+$com_rollback)-($com_commitPrev+$com_rollbackPrev)"
+totalConnections=$(echo $result | awk '{print $12}')
+activeConnections=$(echo $result | awk '{print $14}') 
+SQLINSERT="insert into mysql_info(status,totalConnections,activeConnections,qps,tps,receiveTraffic,sendTraffic,recordTime,server) values(1,$totalConnections,$activeConnections,$qps,$tps,$receiveTraffic,$sendTraffic,\"$recordTime\",\"$server\");"
+else 
+SQLINSERT="insert into mysql_info(status,totalConnections,activeConnections,qps,tps,receiveTraffic,sendTraffic,recordTime,server) values(0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
+fi
+
+echo $SQLINSERT
+insert $SQLINSERT

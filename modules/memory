@@ -1,61 +1,54 @@
 #!/bin/bash
-#get the real path of parent folder
-SOURCE="$0"
-while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-shells=${DIR}
-. $shells/insert
-hostnameCmd=`which hostname`
-server=`$hostnameCmd`
-dateCmd=`which date`
-catCmd=`which cat`
-sedCmd=`which sed`
-awkCmd=`which awk`
-echoCmd=`which echo`
-recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
-result=$($catCmd /proc/meminfo \
-        | $sedCmd 's/':'/''/' \
-	| $awkCmd -F' '   \
-       '{if($1=="MemTotal"||$1=="MemFree"||$1=="Buffers"||$1=="Cached"||$1=="Active"||$1=="MemAvailable") print "\""$1"\":\""$2"\","}' \
-	| $sedCmd 'N;$s/,\n/\n/;P;D' \
+
+# source functions
+. /usr/local/IPTVAgent/lib/functions
+
+server=`hostname`
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+
+result=$(cat /proc/meminfo \
+        | sed 's/':'/''/' \
+	    | awk -F' '   \
+        '{if($1=="MemTotal"||$1=="MemFree"||$1=="Buffers"||$1=="Cached"||$1=="Active"||$1=="MemAvailable") print "\""$1"\":\""$2"\","}' \
+	    | sed 'N;$s/,\n/\n/;P;D' \
         )
+
 space=' '
 left_brace='{'
 right_brace='}'
 quote='\"'
 colon=':'
-temp_str=$($echoCmd $result  \
-        | $sedCmd "s/$space$left_brace$right_brace//g"  \
-        | $sedCmd "s/$quote//g"  \
-        | $awkCmd -F','   \
-         '{for(iCnt=1;iCnt<=NF;iCnt++) print ""$iCnt""}'  \
-         )
-total=$($echoCmd $temp_str | $awkCmd  -F' '   \
-         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemTotal/) print ""$iCnt""}}' \
-        | $awkCmd -F':'   \
-         '{print ""$2""}'  \
-         )
-free=$($echoCmd $temp_str | $awkCmd  -F' '   \
-         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemFree/) print ""$iCnt""}}' \
-        | $awkCmd -F':'   \
-         '{print ""$2""}'  \
-         )
-buffer=$($echoCmd $temp_str | $awkCmd  -F' '   \
-         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Buffers/) print ""$iCnt""}}' \
-        | $awkCmd -F':'   \
-         '{print ""$2""}'  \
-         )
-cache=$($echoCmd $temp_str | $awkCmd  -F' '   \
-         '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Cache/) print ""$iCnt""}}' \
-        | $awkCmd -F':'   \
-         '{print ""$2""}'  \
-         )
-used=`$echoCmd "scale=0; ($total-$free-$buffer-$cache)"|bc| $awkCmd '{printf "%.0f", $0}'`
-utilize=`$echoCmd "scale=4; ($total-$free-$buffer-$cache)/$total*100"|bc|$awkCmd '{printf "%.2f", $0}'`
+
+temp_str=$(echo $result  \
+        | sed "s/$space$left_brace$right_brace//g"  \
+        | sed "s/$quote//g"  \
+        | awk -F','   \
+        '{for(iCnt=1;iCnt<=NF;iCnt++) print ""$iCnt""}'  \
+        )
+total=$(echo $temp_str | awk  -F' '   \
+        '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemTotal/) print ""$iCnt""}}' \
+        | awk -F':'   \
+        '{print ""$2""}'  \
+        )
+free=$(echo $temp_str | awk  -F' '   \
+        '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^MemFree/) print ""$iCnt""}}' \
+        | awk -F':'   \
+        '{print ""$2""}'  \
+        )
+buffer=$(echo $temp_str | awk  -F' '   \
+        '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Buffers/) print ""$iCnt""}}' \
+        | awk -F':'   \
+        '{print ""$2""}'  \
+        )
+cache=$(echo $temp_str | awk  -F' '   \
+        '{for(iCnt=1;iCnt<=NF;iCnt++){if($iCnt~/^Cache/) print ""$iCnt""}}' \
+        | awk -F':'   \
+        '{print ""$2""}'  \
+        )
+used=`echo "scale=0; ($total-$free-$buffer-$cache)"|bc| awk '{printf "%.0f", $0}'`
+utilize=`echo "scale=4; ($total-$free-$buffer-$cache)/$total*100"|bc|awk '{printf "%.2f", $0}'`
+
 SQLINSERT="insert into memory(free,used,buffer,cache,total,utilize,recordTime,server) values($free,$used,$buffer,$cache,$total,$utilize,\"$recordTime\",\"$server\");"
-$echoCmd $SQLINSERT
+
+echo $SQLINSERT
 insert $SQLINSERT

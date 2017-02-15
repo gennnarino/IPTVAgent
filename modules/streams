@@ -1,0 +1,56 @@
+#! /bin/bash
+
+# source cfg file
+. /usr/local/IPTVAgent/cfg/iptvagent.cfg
+
+# source streamInfo
+. $modulePath/streamInfo
+
+#initialize parameters
+server=`hostname`
+MYSQL=`which mysql`
+
+#get the updateTime in MySql
+sqlQueryUpdateTime="select max(updateTime) from ${RDATABASE}.stream where server ='$server';"
+CONNECTION="$MYSQL -h$RHOST -u$RUSER -p$RPASSWORD --default-character-set=utf8 -A -N"
+mysqlUpdateTime="$($CONNECTION -e "$sqlQueryUpdateTime")"
+
+#get the updateTime in Redis
+redisCmd=`which redis-cli`
+redisUpdateTime=`$redisCmd<<EOF
+get streamUpdateTime
+exit
+EOF`
+
+#if inconsistent, update redis cache
+if (`test "$mysqlUpdateTime" != "$redisUpdateTime" `||`test -z "$redisUpdateTime"`);then
+    refreshRedisUpdateTime=`$redisCmd<<EOF
+    set streamUpdateTime "$mysqlUpdateTime"
+    exit
+    EOF`
+    sql="select streamName,source from ${RDATABASE}.stream where server ='$server';"
+    CONNECTION="$MYSQL -h$RHOST -u$RUSER -p$RPASSWORD --default-character-set=utf8 -A -N"
+    results=("$($CONNECTION -e "$sql")")
+    
+    #cache results in redis
+    streamsInfo=""
+    for var in ${results[*]}
+    do
+      streamsInfo=$streamsInfo" "$var
+    done   
+    redis=`$redisCmd<<EOF
+    DEL streams
+    hmset streams $streamsInfo
+    exit
+    EOF`
+fi
+
+#get cached streamNames from redis
+names=(`$redisCmd<<EOF
+hkeys streams
+exit
+EOF`)
+for name in ${names[*]}
+   do
+      getStreamInfo $name &
+   done

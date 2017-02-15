@@ -1,41 +1,22 @@
 #!/bin/bash
-shCmd=`which sh`
-dateCmd=`which date`
-echoCmd=`which echo`
-psCmd=`which ps`
-grepCmd=`which grep`
-testCmd=`which test`
-#get the real path of parent folder
-SOURCE="$0"
-while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-shells=${DIR}
-#judge if there is another existing process executing this shell script, if so exit current process
-function getExistingPIDs(){
-selfPID="$1"
-scriptFile="$2"
-$psCmd -ef | $grepCmd "${scriptFile}" | $grepCmd -v "grep" | $awkCmd "{ if(\$2!=$selfPID) print \$2 }"
-}
-selfPID="$$"
-scriptFile="$0"
-existingPid=`getExistingPIDs $selfPID "$scriptFile"`
-if (`$testCmd-n "$existingPid"`); then
-  exit 0
+
+# source cfg file
+. /usr/local/IPTVAgent/cfg/iptvagent.cfg
+
+if [ -d $tmpPath ]; then
+    rm $tmpPath/*
 fi
-#execute shellscripts
-recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
-echo "[$recordTime]:Start a new round of collecting. PID=$$">> $shells/collect.log
-$shCmd $shells/memory & 
-$shCmd $shells/load_avg &
-$shCmd $shells/disk &
-$shCmd $shells/cpu_time &
-$shCmd $shells/traffic &
-$shCmd $shells/mysql_info &
-$shCmd $shells/getProcessNames &
-$shCmd $shells/io &
-$shCmd $shells/realtimeCron &
+
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+echo "[$recordTime] [INFO] Start a new round of collecting">> $logPath/iptvagent.log
+
+# collect information
+$modulePath/memory & 
+$modulePath/load_avg &
+$modulePath/disk &
+$modulePath/cpu &
+$modulePath/traffic &
+$modulePath/mysql &
+$modulePath/streams &
+$modulePath/io &
 exit 0

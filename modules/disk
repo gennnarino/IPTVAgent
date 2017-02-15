@@ -1,29 +1,22 @@
 #!/bin/bash
-#get the real path of parent folder
-SOURCE="$0"
-while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-shells=${DIR}
-. $shells/insert
-hostnameCmd=`which hostname`
-server=`$hostnameCmd`
-awkCmd=`which awk`
-echoCmd=`which echo`
-dateCmd=`which date`
-dfCmd=`which df`
-recordTime=`$dateCmd -d today +"%Y-%m-%d %H:%M:%S"`
-rst=$($dfCmd -k | $awkCmd 'NR>1{a+=$4;b+=$3;c+=$2}END{print a","b","c}')
-free=$($echoCmd $rst | $awkCmd -F ',' '{print $1}')
-free=`$echoCmd "scale=2;$free/1024/1024"|bc| $awkCmd '{printf "%.2f", $0}'`
-used=$($echoCmd $rst | $awkCmd -F ',' '{print $2}')
-used=`$echoCmd "scale=2;$used/1024/1024"|bc| $awkCmd '{printf "%.2f", $0}'`
-total=$($echoCmd $rst | $awkCmd -F ',' '{print $3}')
-total=`$echoCmd "scale=2;$total/1024/1024"|bc| $awkCmd '{printf "%.2f", $0}'`
-freePercent=`$echoCmd "scale=4;$free/$total*100"|bc| $awkCmd '{printf "%.2f", $0}'`
-SQLINSERT="insert into disk(free,used,total,freePercent,recordTime,server) values($free,$used,$total,$freePercent,\"$recordTime\",\"$server\");"
-$echoCmd $SQLINSERT
+
+#source functions
+. /usr/local/IPTVAgent/lib/functions
+
+server=`hostname`
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+
+rst=$(df -k | awk 'NR>1{a+=$4;b+=$3;c+=$2}END{print a","b","c}')
+free=$(echo $rst | awk -F ',' '{print $1}')
+free=`echo "scale=2;$free/1024/1024"|bc|awk '{printf "%.2f", $0}'`
+used=$(echo $rst | awk -F ',' '{print $2}')
+used=`echo "scale=2;$used/1024/1024"|bc|awk '{printf "%.2f", $0}'`
+total=$(echo $rst | awk -F ',' '{print $3}')
+total=`echo "scale=2;$total/1024/1024"|bc| awk '{printf "%.2f", $0}'`
+freePercent=`echo "scale=4;$free/$total*100"|bc| awk '{printf "%.2f", $0}'`
+usedPercent=`echo "scale=4;$used/$total*100"|bc| awk '{printf "%.2f", $0}'`
+
+SQLINSERT="insert into disk(free,used,total,freePercent,usedPercent,recordTime,server) values($free,$used,$total,$freePercent,$usedPercent,\"$recordTime\",\"$server\");"
+
+echo $SQLINSERT
 insert $SQLINSERT

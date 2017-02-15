@@ -1,0 +1,94 @@
+#! /bin/bash
+
+# source functions
+. /usr/local/IPTVAgent/lib/functions
+
+getStreamInfo() {
+    server=`hostname`
+    redisCmd=`which redis-cli`
+    streamName=`echo $1`
+    streamSource=`$redisCmd<<EOF
+    hget streams $streamName
+    exit
+    EOF`
+    PID=$(ps -ef|grep  $streamSource |grep -v grep\
+        | awk '{{print " "$2" "}}')
+    folder=$(echo "/proc/"$PID|sed s/[[:space:]]//g)
+    # when /proc/pid exists
+    if (`test -d "$folder"`&&`test -n "$PID"`);then
+        fileProcCPU=$(echo "/proc/"$PID"/stat"|sed s/[[:space:]]//g)
+        fileProcMem=$(echo "/proc/"$PID"/status"|sed s/[[:space:]]//g)
+        fileProcIO=$(echo "/proc/"$PID"/io"|sed s/[:space:]]//g)
+
+        #get process CPU statistics  for the first time
+        prevProcCPU=$(cat ${fileProcCPU})
+        prevCPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
+
+        #sleep for a while
+        sleep 1
+        recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+
+        #get process CPU statistics  for the second time
+        procCPU=$(cat ${fileProcCPU})
+        CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
+
+        #get process mem statistics 
+        RSS=$(cat ${fileProcMem}\
+            |grep VmRSS            \
+            | sed 's/':'/''/' \
+    	    |  awk '{{print $2}}'   \
+        )
+        totalMem=$(cat /proc/meminfo \
+                |grep MemTotal            \
+                | sed 's/':'/''/' \
+            	|  awk '{{print $2}}'   \
+        )
+
+        #get process IO statistics 
+        readByte=$(cat ${fileProcIO}\
+                |grep ^read_bytes            \
+                | sed 's/':'/''/' \
+    	        | awk '{print $2}'   \
+        )
+        writeByte=$(cat ${fileProcIO}\
+                |grep ^write_bytes            \
+                | sed 's/':'/''/' \
+    	    |  awk '{print $2}'   \
+        )
+    
+        #calculate process CPU statistics 
+        prevProcCPUUser=$(echo ${prevProcCPU} | awk '{print $14}')
+        prevProcCPUSystem=$(echo ${prevProcCPU} | awk '{print $15}')
+        prevProcCPUTotal=$(echo ${prevProcCPU} | awk '{print $14+$15+16+17}')
+        prevCPUTotal=0
+        for VALUE in "${prevCPU[@]}"; 
+        do
+            let "prevCPUTotal=$prevCPUTotal+$VALUE"
+        done
+        procCPUUser=$(echo ${procCPU} | awk '{print $14}')
+        procCPUSystem=$(echo ${procCPU} | awk '{print $15}')
+        procCPUTotal=$(echo ${procCPU} | awk '{print $14+$15+16+17}')
+        CPUTotal=0
+        for VALUE in "${CPU[@]}"; 
+        do
+            let "CPUTotal=$CPUTotal+$VALUE"
+        done
+        let "diffProcCPUUser=$procCPUUser-$prevProcCPUUser"
+        let "diffProcCPUSystem=$procCPUSystem-$prevProcCPUSystem"
+        let "diffProcCPUTotal=$procCPUTotal-$prevProcCPUTotal"
+        let "diffCPUTotal=$CPUTotal-$prevCPUTotal"
+        procCPUUserP=`echo "scale=4;$diffProcCPUUser/$diffCPUTotal*100"|bc |  awk '{printf "%.2f", $0}'` 
+        procCPUSystemP=`echo "scale=4;$diffProcCPUSystem/$diffCPUTotal*100"|bc |  awk '{printf "%.2f", $0}'` 
+        procCPUTotalP=`echo "scale=4;$diffProcCPUTotal/$diffCPUTotal*100"|bc |  awk '{printf "%.2f", $0}'` 
+        ####calculate process Mem statistics 
+        memoryP=`echo "scale=4;$RSS/$totalMem*100"|bc |  awk '{printf "%.2f", $0}'`
+        SQLINSERT="insert into stream_info(streamName,status,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",1,$procCPUUserP,$procCPUSystemP,$procCPUTotalP,$memoryP,$RSS,$readByte,$writeByte,\"$recordTime\",\"$server\");"
+    else
+        #When the process folder doesn't exist
+        recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+        SQLINSERT="insert into stream_info(streamName,status,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",0,0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
+    
+    fi  
+    echo $SQLINSERT
+    insert $SQLINSERT
+}
