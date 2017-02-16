@@ -2,6 +2,8 @@
 
 # source functions
 . /usr/local/IPTVAgent/lib/functions
+# source configuration file
+. /usr/local/IPTVAgent/cfg/iptvagent.cfg
 
 getStreamInfo() {
     server=`hostname`
@@ -83,7 +85,7 @@ getStreamInfo() {
         ####calculate process Mem statistics 
         memoryP=`echo "scale=4;$RSS/$totalMem*100"|bc |  awk '{printf "%.2f", $0}'`
         ##test whether the source file is valid
-        `timeout 10 ffmpeg -y -t 1 -i $streamSource -c:v copy -c:a copy -f flv /usr/local/IPTVAgent/tmp/1.mp4`
+        `timeout 10 ffmpeg -y -t 1 -i $streamSource -c:v copy -c:a copy -f flv $tmpPath/1.mp4`
         sourceFLAG=`echo $?`
         if (`test $sourceFLAG -eq 0`);then
           sourceStatus=1
