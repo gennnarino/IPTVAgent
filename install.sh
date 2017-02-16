@@ -23,7 +23,7 @@ $installUbuntu "awk"
 $installUbuntu "bc" 
 $installUbuntu "sed" 
 $installUbuntu "curl" 
-$installUbuntu "redis" 
+$installUbuntu "redis-server" 
 fi 
 #mkdir for iptvagent
 if [ ! -d $installPath ]; then
