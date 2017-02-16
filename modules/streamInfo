@@ -82,13 +82,21 @@ getStreamInfo() {
         procCPUTotalP=`echo "scale=4;$diffProcCPUTotal/$diffCPUTotal*100"|bc |  awk '{printf "%.2f", $0}'` 
         ####calculate process Mem statistics 
         memoryP=`echo "scale=4;$RSS/$totalMem*100"|bc |  awk '{printf "%.2f", $0}'`
-        SQLINSERT="insert into stream_info(streamName,status,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",1,$procCPUUserP,$procCPUSystemP,$procCPUTotalP,$memoryP,$RSS,$readByte,$writeByte,\"$recordTime\",\"$server\");"
+        ##test whether the source file is valid
+        `timeout 10 ffmpeg -y -t 1 -i $streamSource -c:v copy -c:a copy -f flv /usr/local/IPTVAgent/tmp/1.mp4`
+        sourceFLAG=`echo $?`
+        if (`test $sourceFLAG -eq 0`);then
+          sourceStatus=1
+        else
+          sourceStatus=0
+        fi
+        ##insert into database  
+        SQLINSERT="insert into stream_info(streamName,status,sourceStatus,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",1,$sourceStatus,$procCPUUserP,$procCPUSystemP,$procCPUTotalP,$memoryP,$RSS,$readByte,$writeByte,\"$recordTime\",\"$server\");"
     else
         #When the process folder doesn't exist
         recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
-        SQLINSERT="insert into stream_info(streamName,status,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",0,0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
-    
-    fi  
+        SQLINSERT="insert into stream_info(streamName,status,sourceStatus,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",0,0,0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
+    fi
     echo $SQLINSERT
     insert $SQLINSERT
 }
