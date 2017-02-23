@@ -1,10 +1,12 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2016/12/26 15:00:00                          */
+/* Created on:     2017/2/23 10:38:18                           */
 /*==============================================================*/
 drop database if exists iptvm;
 create database iptvm default character set utf8 collate utf8_general_ci;
 use iptvm;
+
+drop procedure if exists updateServerState;
 
 drop table if exists account;
 
@@ -36,11 +38,9 @@ drop table if exists memory;
 
 drop table if exists menu;
 
+drop table if exists mysql_info;
+
 drop table if exists nginx;
-
-drop table if exists process;
-
-drop table if exists process_info;
 
 drop table if exists product;
 
@@ -55,6 +55,12 @@ drop table if exists server;
 drop table if exists stb_log;
 
 drop table if exists stbbind;
+
+drop table if exists stream;
+
+drop table if exists stream_info;
+
+drop table if exists threshold;
 
 drop table if exists traffic;
 
@@ -232,6 +238,7 @@ create table disk
    free                 decimal(15,2) not null comment '磁盘可用量（G）',
    used                 decimal(15,2) not null comment '磁盘已用量（G）',
    total                decimal(15,2) not null comment '磁盘总大小（G）',
+   usedPercent          decimal(15,2) not null comment '磁盘已用量百分比',
    freePercent          decimal(15,2) not null comment '磁盘可用量百分比',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
@@ -247,6 +254,7 @@ alter table disk comment '磁盘';
 /*==============================================================*/
 create table io
 (
+   deviceName           varchar(50) not null comment '设备名',
    mergedRead           decimal(15,2) not null comment '单位时间合并读请求数',
    mergedWrite          decimal(15,2) not null comment '单位时间合并写请求数',
    readRequest          decimal(15,2) not null comment '单位时间读请求数',
@@ -259,7 +267,7 @@ create table io
    utilize              decimal(15,2) not null comment 'CPU等待IO请求时间',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server)
+   primary key (recordTime, server, deviceName)
 )
 charset = UTF8
 engine = InnoDB;
@@ -343,10 +351,30 @@ engine = InnoDB;
 alter table menu comment '菜单';
 
 /*==============================================================*/
+/* Table: mysql_info                                            */
+/*==============================================================*/
+create table mysql_info
+(
+   status               bool not null comment '状态',
+   totalConnections     int not null comment '总连接数',
+   activeConnections    int not null comment '活动连接数',
+   qps                  int not null comment '每秒请求数',
+   tps                  int not null comment '每秒事务数',
+   receiveTraffic       int not null comment '每秒接收流量（KB）',
+   sendTraffic          int not null comment '每秒发送流量（KB）',
+   recordTime           datetime not null comment '记录时间',
+   server               varchar(128) not null comment '所属服务器',
+   primary key (server, recordTime)
+);
+
+alter table mysql_info comment 'MySQL信息';
+
+/*==============================================================*/
 /* Table: nginx                                                 */
 /*==============================================================*/
 create table nginx
 (
+   status               bool not null comment '状态',
    accept               int not null comment '接收的新连接数',
    handle               int not null comment '总共处理的连接数',
    request              int not null comment '总共产生连接数',
@@ -364,41 +392,6 @@ charset = UTF8
 engine = InnoDB;
 
 alter table nginx comment 'nginx';
-
-/*==============================================================*/
-/* Table: process                                               */
-/*==============================================================*/
-create table process
-(
-   processName          varchar(64) not null comment '进程名',
-   server               varchar(128) not null comment '所属服务器',
-   primary key (processName, server)
-);
-
-alter table process comment '进程';
-
-/*==============================================================*/
-/* Table: process_info                                          */
-/*==============================================================*/
-create table process_info
-(
-   processName          varchar(64) not null comment '进程名',
-   status               bool not null comment '进程状态',
-   user                 decimal(8,2) not null comment '用户态cpu消耗百分比',
-   system               decimal(8,2) not null comment '系统态cpu消耗百分比',
-   total                decimal(8,2) not null comment '总cpu消耗百分比',
-   memory               decimal(8,2) not null comment '总内存消耗百分比',
-   rss                  int not null comment '物理内存消耗（KB）',
-   readByte             int not null comment '进程io读字节',
-   writeByte            int not null comment '进程io写字节',
-   recordTime           datetime not null comment '记录时间',
-   server               varchar(128) not null comment '所属服务器',
-   primary key (processName, recordTime, server)
-)
-charset = UTF8
-engine = InnoDB;
-
-alter table process_info comment '进程信息';
 
 /*==============================================================*/
 /* Table: product                                               */
@@ -460,6 +453,7 @@ create table realtime
    memoryUtilize        decimal(8,2) not null comment '内存利用率',
    diskUtilize          decimal(8,2) not null comment '磁盘利用率',
    load1                decimal(8,2) not null comment '1分钟负载',
+   recordTime           datetime not null comment '记录时间',
    primary key (server)
 );
 
@@ -472,8 +466,10 @@ create table server
 (
    serverName           varchar(128) not null comment '服务器名称',
    serverIp             varchar(30) not null comment '服务器Ip',
-   state                bool not null comment '服务器状态',
+   status               bool not null comment '服务器状态',
    operatingSystem      varchar(50) not null comment '操作系统',
+   createTime           datetime not null comment '创建时间',
+   updateTime           datetime not null comment '更新时间',
    primary key (serverName),
    unique key AK_host_key (serverName)
 )
@@ -518,6 +514,60 @@ engine = InnoDB;
 alter table stbbind comment '机顶盒预绑定产品包';
 
 /*==============================================================*/
+/* Table: stream                                                */
+/*==============================================================*/
+create table stream
+(
+   streamName           varchar(64) not null comment '串流名',
+   status               bool not null comment '串流状态',
+   source               varchar(256) not null comment '流源',
+   sourceStatus         bool not null comment '流源状态',
+   server               varchar(128) not null comment '所属服务器',
+   createTime           datetime not null comment '创建时间',
+   updateTime           datetime not null comment '更新时间',
+   primary key (streamName, server)
+);
+
+alter table stream comment '串流';
+
+/*==============================================================*/
+/* Table: stream_info                                           */
+/*==============================================================*/
+create table stream_info
+(
+   streamName           varchar(64) not null comment '串流名',
+   status               bool not null comment '串流状态',
+   sourceStatus         bool not null comment '流源状态',
+   user                 decimal(8,2) not null comment '用户态cpu消耗百分比',
+   system               decimal(8,2) not null comment '系统态cpu消耗百分比',
+   total                decimal(8,2) not null comment '总cpu消耗百分比',
+   memory               decimal(8,2) not null comment '总内存消耗百分比',
+   rss                  int not null comment '物理内存消耗（KB）',
+   readByte             int not null comment '进程io读字节',
+   writeByte            int not null comment '进程io写字节',
+   recordTime           datetime not null comment '记录时间',
+   server               varchar(128) not null comment '所属服务器',
+   primary key (streamName, recordTime, server)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table stream_info comment '串流信息';
+
+/*==============================================================*/
+/* Table: threshold                                             */
+/*==============================================================*/
+create table threshold
+(
+   cpu                  decimal(8,2) not null comment 'cpu（%）',
+   memory               decimal(8,2) not null comment '内存（%）',
+   disk                 decimal(8,2) not null comment '磁盘（%）',
+   loads                decimal(8,2) not null comment '负载（%）'
+);
+
+alter table threshold comment '阈值';
+
+/*==============================================================*/
 /* Table: traffic                                               */
 /*==============================================================*/
 create table traffic
@@ -552,34 +602,31 @@ alter table channel_directory add constraint FK_channel_directory2 foreign key (
       references channel (channelId) on delete cascade on update cascade;
 
 alter table cpu add constraint FK_server_cpu foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+      references server (serverName) on delete cascade on update cascade;
 
 alter table directory add constraint FK_directory_directory foreign key (parentId)
       references directory (directoryId) on delete cascade on update cascade;
 
 alter table disk add constraint FK_server_disk foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+      references server (serverName) on delete cascade on update cascade;
 
 alter table io add constraint FK_server_io foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+      references server (serverName) on delete cascade on update cascade;
 
 alter table loads add constraint FK_server_load foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+      references server (serverName) on delete cascade on update cascade;
 
 alter table memory add constraint FK_server_memory foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+      references server (serverName) on delete cascade on update cascade;
 
 alter table menu add constraint FK_menu_menu foreign key (parentId)
       references menu (id) on delete cascade on update cascade;
 
+alter table mysql_info add constraint FK_server_mysql foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
 alter table nginx add constraint FK_server_nginx foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
-
-alter table process add constraint FK_server_process foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
-
-alter table process_info add constraint FK_server_processinfo foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+      references server (serverName) on delete cascade on update cascade;
 
 alter table product_channel add constraint FK_product_channel foreign key (productId)
       references product (productId) on delete cascade on update cascade;
@@ -594,7 +641,7 @@ alter table productcard add constraint FK_product_productcard foreign key (produ
       references product (productId) on delete cascade on update restrict;
 
 alter table realtime add constraint FK_server_realtime foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+      references server (serverName) on delete cascade on update cascade;
 
 alter table stbbind add constraint FK_stbbind foreign key (productId)
       references product (productId) on delete cascade on update cascade;
@@ -602,6 +649,52 @@ alter table stbbind add constraint FK_stbbind foreign key (productId)
 alter table stbbind add constraint FK_stbbind2 foreign key (accountId)
       references account (accountId) on delete cascade on update cascade;
 
-alter table traffic add constraint FK_server_traffic foreign key (server)
-      references server (serverName) on delete restrict on update restrict;
+alter table stream add constraint FK_server_process foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
 
+alter table stream_info add constraint FK_server_processinfo foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
+alter table traffic add constraint FK_server_traffic foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
+
+DELIMITER ;;
+CREATE PROCEDURE updateServerState()
+BEGIN
+    DECLARE Done INT DEFAULT 0;
+	DECLARE pserver VARCHAR(128);
+	DECLARE precordtime DATETIME;
+	DECLARE pstatus TINYINT; 
+	DECLARE pdiff INT;
+	DECLARE pcursor CURSOR FOR SELECT server,recordTime FROM realtime;
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET Done = 1;
+	OPEN pcursor;
+	FETCH NEXT FROM pcursor INTO pserver,precordtime;
+	REPEAT
+		IF NOT Done THEN
+			#SELECT pserver,precordtime;
+			SELECT TIMESTAMPDIFF(MINUTE,precordtime,NOW()) INTO pdiff;
+			SELECT status INTO pstatus FROM `server` WHERE serverName=pserver;
+			IF pdiff > 1 && pstatus = 1 THEN
+				UPDATE `server` SET `status`=0 WHERE serverName=pserver;
+			END IF;
+			IF pdiff < 1 && pstatus = 0 THEN
+				UPDATE `server` SET `status`=1 WHERE serverName=pserver;
+			END IF;
+			#SELECT pstatus;
+		END IF;
+		FETCH NEXT FROM pcursor INTO pserver,precordtime;
+	UNTIL Done END REPEAT;
+	CLOSE pcursor;
+END
+;;
+DELIMITER ;
+
+# scheduler event
+SET GLOBAL event_scheduler = 1;
+DROP EVENT IF EXISTS callUpdateProcedure;
+DELIMITER ;;
+CREATE EVENT callUpdateProcedure ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerState
+;;
+DELIMITER ;
