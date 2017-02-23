@@ -7,6 +7,6 @@
 while true 
 do
     sleep $realtimeInterval
-    $modulePath/realtime &
+    $modulePath/realtime
 done
 
