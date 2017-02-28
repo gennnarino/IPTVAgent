@@ -20,6 +20,7 @@ $modulePath/disk &
 $modulePath/cpu &
 $modulePath/traffic &
 $modulePath/mysql &
+$modulePath/nginx &
 $modulePath/streams &
 $modulePath/io &
 exit 0
