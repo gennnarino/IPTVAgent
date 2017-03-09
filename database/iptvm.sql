@@ -1,6 +1,6 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2017/2/23 10:38:18                           */
+/* Created on:     2017/3/9 8:58:30                             */
 /*==============================================================*/
 drop database if exists iptvm;
 create database iptvm default character set utf8 collate utf8_general_ci;
@@ -15,6 +15,8 @@ drop table if exists account_product;
 drop table if exists admin_log;
 
 drop table if exists administrator;
+
+drop table if exists agent_log;
 
 drop table if exists api;
 
@@ -38,9 +40,15 @@ drop table if exists memory;
 
 drop table if exists menu;
 
+drop table if exists mysql;
+
 drop table if exists mysql_info;
 
 drop table if exists nginx;
+
+drop table if exists nginx_info;
+
+drop table if exists online_client;
 
 drop table if exists product;
 
@@ -59,6 +67,10 @@ drop table if exists stbbind;
 drop table if exists stream;
 
 drop table if exists stream_info;
+
+drop table if exists streaming_access_log;
+
+drop table if exists streaming_log;
 
 drop table if exists threshold;
 
@@ -135,6 +147,24 @@ charset = UTF8
 engine = InnoDB;
 
 alter table administrator comment '管理员';
+
+/*==============================================================*/
+/* Table: agent_log                                             */
+/*==============================================================*/
+create table agent_log
+(
+   id                   bigint not null auto_increment comment 'id',
+   moduleName           varchar(20) not null comment '模块名',
+   server               varchar(128) not null comment '所在服务器',
+   status               varchar(10) not null comment '状态',
+   detail               varchar(200) not null comment '详情',
+   recordTime           datetime not null comment '记录时间',
+   primary key (id)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table agent_log comment 'Agent日志';
 
 /*==============================================================*/
 /* Table: api                                                   */
@@ -351,6 +381,20 @@ engine = InnoDB;
 alter table menu comment '菜单';
 
 /*==============================================================*/
+/* Table: mysql                                                 */
+/*==============================================================*/
+create table mysql
+(
+   status               bool not null comment '状态',
+   server               varchar(128) not null comment '所属服务器',
+   primary key (server)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table mysql comment 'MySQL';
+
+/*==============================================================*/
 /* Table: mysql_info                                            */
 /*==============================================================*/
 create table mysql_info
@@ -365,7 +409,9 @@ create table mysql_info
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (server, recordTime)
-);
+)
+charset = UTF8
+engine = InnoDB;
 
 alter table mysql_info comment 'MySQL信息';
 
@@ -373,6 +419,20 @@ alter table mysql_info comment 'MySQL信息';
 /* Table: nginx                                                 */
 /*==============================================================*/
 create table nginx
+(
+   status               bool not null comment '状态',
+   server               varchar(128) not null comment '所属服务器',
+   primary key (server)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table nginx comment 'nginx';
+
+/*==============================================================*/
+/* Table: nginx_info                                            */
+/*==============================================================*/
+create table nginx_info
 (
    status               bool not null comment '状态',
    accept               int not null comment '接收的新连接数',
@@ -391,7 +451,25 @@ create table nginx
 charset = UTF8
 engine = InnoDB;
 
-alter table nginx comment 'nginx';
+alter table nginx_info comment 'nginx信息';
+
+/*==============================================================*/
+/* Table: online_client                                         */
+/*==============================================================*/
+create table online_client
+(
+   accountId            varchar(20) not null comment '账户ID',
+   server               varchar(128) not null comment '访问服务器',
+   stream               varchar(64) not null comment '访问流',
+   Ip                   varchar(30) not null comment 'Ip',
+   startTime            datetime not null comment '开始时间',
+   totalTime            int not null comment '观看时长',
+   primary key (accountId, server, stream)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table online_client comment '在线用户';
 
 /*==============================================================*/
 /* Table: product                                               */
@@ -455,7 +533,9 @@ create table realtime
    load1                decimal(8,2) not null comment '1分钟负载',
    recordTime           datetime not null comment '记录时间',
    primary key (server)
-);
+)
+charset = UTF8
+engine = InnoDB;
 
 alter table realtime comment '实时';
 
@@ -526,7 +606,9 @@ create table stream
    createTime           datetime not null comment '创建时间',
    updateTime           datetime not null comment '更新时间',
    primary key (streamName, server)
-);
+)
+charset = UTF8
+engine = InnoDB;
 
 alter table stream comment '串流';
 
@@ -555,6 +637,44 @@ engine = InnoDB;
 alter table stream_info comment '串流信息';
 
 /*==============================================================*/
+/* Table: streaming_access_log                                  */
+/*==============================================================*/
+create table streaming_access_log
+(
+   id                   bigint not null auto_increment comment 'id',
+   accountId            varchar(20) not null comment '用户ID',
+   server               varchar(128) not null comment '访问服务器',
+   stream               varchar(64) not null comment '访问流',
+   Ip                   varchar(30) not null comment 'Ip',
+   startTime            datetime not null comment '开始时间',
+   endTime              datetime not null comment '结束时间',
+   totalTime            int not null comment '总时长',
+   primary key (id)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table streaming_access_log comment '串流访问日志';
+
+/*==============================================================*/
+/* Table: streaming_log                                         */
+/*==============================================================*/
+create table streaming_log
+(
+   id                   bigint not null auto_increment comment 'id',
+   streamName           varchar(64) not null comment '串流名',
+   server               varchar(128) not null comment '所属服务器',
+   status               varchar(10) not null comment '状态',
+   detail               varchar(200) not null comment '详情',
+   recordTime           datetime not null comment '记录时间',
+   primary key (id)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table streaming_log comment '串流日志';
+
+/*==============================================================*/
 /* Table: threshold                                             */
 /*==============================================================*/
 create table threshold
@@ -563,7 +683,9 @@ create table threshold
    memory               decimal(8,2) not null comment '内存（%）',
    disk                 decimal(8,2) not null comment '磁盘（%）',
    loads                decimal(8,2) not null comment '负载（%）'
-);
+)
+charset = UTF8
+engine = InnoDB;
 
 alter table threshold comment '阈值';
 
@@ -591,6 +713,9 @@ alter table account_product add constraint FK_account_product foreign key (accou
 
 alter table account_product add constraint FK_account_product2 foreign key (productId)
       references product (productId) on delete cascade on update cascade;
+
+alter table agent_log add constraint FK_server_agentlog foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
 
 alter table channel add constraint FK_language_channel foreign key (languageId)
       references language (languageId) on delete cascade on update cascade;
@@ -622,10 +747,22 @@ alter table memory add constraint FK_server_memory foreign key (server)
 alter table menu add constraint FK_menu_menu foreign key (parentId)
       references menu (id) on delete cascade on update cascade;
 
-alter table mysql_info add constraint FK_server_mysql foreign key (server)
+alter table mysql add constraint FK_server_mysql foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
+alter table mysql_info add constraint FK_server_mysqlinfo foreign key (server)
       references server (serverName) on delete cascade on update cascade;
 
 alter table nginx add constraint FK_server_nginx foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
+alter table nginx_info add constraint FK_server_nginxinfo foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
+alter table online_client add constraint FK_account_onlineclient foreign key (accountId)
+      references account (accountId) on delete cascade on update cascade;
+
+alter table online_client add constraint FK_server_onlineclient foreign key (server)
       references server (serverName) on delete cascade on update cascade;
 
 alter table product_channel add constraint FK_product_channel foreign key (productId)
@@ -649,10 +786,19 @@ alter table stbbind add constraint FK_stbbind foreign key (productId)
 alter table stbbind add constraint FK_stbbind2 foreign key (accountId)
       references account (accountId) on delete cascade on update cascade;
 
-alter table stream add constraint FK_server_process foreign key (server)
+alter table stream add constraint FK_server_stream foreign key (server)
       references server (serverName) on delete cascade on update cascade;
 
-alter table stream_info add constraint FK_server_processinfo foreign key (server)
+alter table stream_info add constraint FK_server_streaminfo foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
+alter table streaming_access_log add constraint FK_account_streamingaccesslog foreign key (accountId)
+      references account (accountId) on delete cascade on update cascade;
+
+alter table streaming_access_log add constraint FK_server_streamingaccesslog foreign key (server)
+      references server (serverName) on delete cascade on update cascade;
+
+alter table streaming_log add constraint FK_server_streaminglog foreign key (server)
       references server (serverName) on delete cascade on update cascade;
 
 alter table traffic add constraint FK_server_traffic foreign key (server)
