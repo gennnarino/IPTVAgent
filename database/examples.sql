@@ -1,4 +1,5 @@
 delete from administrator;
+delete from threshold;
 delete from menu;
 delete from account_product;
 delete from product_channel;
@@ -13,6 +14,8 @@ delete from product;
 
 /*密码默认为：admin123*/
 INSERT INTO `administrator` (`Id`, `UserName`, `Password`, `RealName`, `Email`, `Type`, `LastLoginTime`, `AuthKey`, `CreateTime`, `UpdateTime`) VALUES ('1', 'admin', '$2y$13$KE6R5/a4qV0GH/4tI9FDpOoHInV6rOgVBKT10wCu7ZGCgtSuibwXC', 'admin', 'admin@admin.com', '1', '2016-10-14 00:00:00', 'jlkfad', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
+
+INSERT INTO `threshold` (`cpu`, `memory`, `disk`, `loads`) VALUES ('50', '50', '80', '90');
 
 INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('1', 'Home', NULL, '/site/index', '1', '1', 'iconfont iconfont-fw icon-home', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
 INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('2', 'Administrator Management', NULL, '/admin/index', '1', '2', 'iconfont iconfont-fw icon-admin', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
@@ -39,9 +42,9 @@ INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrd
 INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('23', 'Stream Access Log', '20', '/monitor/stream-access-log', '3', '3', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
 INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('24', 'API Access Log', '20', '/monitor/api-access-log', '3', '4', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
 INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('25', 'Monitor Configuration', '13', 'javascript:void(0)', '2', '6', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
-INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('26', 'Mointored Servers', '19', '/server/index', '3', '1', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
-INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('27', 'Mointored Streams', '19', '/stream/index', '3', '2', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
-INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('28', 'Threshold Management', '19', '/threshold/index', '3', '3', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
+INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('26', 'Mointored Servers', '25', '/server/index', '3', '1', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
+INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('27', 'Mointored Streams', '25', '/stream/index', '3', '2', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
+INSERT INTO `menu` (`Id`, `MenuName`, `ParentId`, `Route`, `ShowLevel`, `ShowOrder`, `Icon`, `CreateTime`, `UpdateTime`) VALUES ('28', 'Threshold Management', '25', '/threshold/index', '3', '3', 'iconfont iconfont-fw icon-stb-log', '2016-10-14 00:00:00', '2016-10-14 00:00:00');
 
 INSERT INTO `account` (`AccountID`, `State`, `Enable`, `CreateTime`, `UpdateTime`) VALUES('00110568C712', 1001, 1, '2016-10-14 00:00:00', '2016-10-14 00:00:00');
 INSERT INTO `account` (`AccountID`, `State`, `Enable`, `CreateTime`, `UpdateTime`) VALUES('11820002DE1D', 1001, 1, '2016-10-14 00:00:00', '2016-10-14 00:00:00');

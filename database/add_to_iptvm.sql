@@ -15,3 +15,16 @@ DELIMITER ;;
 CREATE EVENT callUpdateProcedure ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerState
 ;;
 DELIMITER ;
+
+# trigger
+DROP TRIGGER IF EXISTS `insertApp`;
+DELIMITER ;;
+CREATE TRIGGER `insertApp` 
+AFTER INSERT ON `server` 
+FOR EACH ROW 
+BEGIN
+insert into mysql values (1, new.serverName );
+insert into nginx values (1, new.serverName );
+END
+;;
+DELIMITER ;

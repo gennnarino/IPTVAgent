@@ -1,6 +1,6 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2017/3/9 8:58:30                             */
+/* Created on:     2017/3/9 13:50:03                            */
 /*==============================================================*/
 drop database if exists iptvm;
 create database iptvm default character set utf8 collate utf8_general_ci;
@@ -94,6 +94,22 @@ engine = InnoDB;
 alter table account comment '账户';
 
 /*==============================================================*/
+/* Table: product                                               */
+/*==============================================================*/
+create table product
+(
+   productId            int not null auto_increment comment '产品id',
+   productName          varchar(20) not null comment '产品名称',
+   createTime           datetime not null comment '创建时间',
+   updateTime           datetime not null comment '修改时间',
+   primary key (productId)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table product comment '产品包';
+
+/*==============================================================*/
 /* Table: account_product                                       */
 /*==============================================================*/
 create table account_product
@@ -101,7 +117,11 @@ create table account_product
    accountId            varchar(20) not null comment '使用账户id',
    productId            int not null comment '产品id',
    endDate              date not null comment '到期时间',
-   primary key (accountId, productId)
+   primary key (accountId, productId),
+   constraint FK_account_product foreign key (accountId)
+      references account (accountId) on delete cascade on update cascade,
+   constraint FK_account_product2 foreign key (productId)
+      references product (productId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -149,6 +169,24 @@ engine = InnoDB;
 alter table administrator comment '管理员';
 
 /*==============================================================*/
+/* Table: server                                                */
+/*==============================================================*/
+create table server
+(
+   serverName           varchar(128) not null comment '服务器名称',
+   serverIp             varchar(30) not null comment '服务器Ip',
+   status               bool not null comment '服务器状态',
+   operatingSystem      varchar(50) not null comment '操作系统',
+   createTime           datetime not null comment '创建时间',
+   updateTime           datetime not null comment '更新时间',
+   primary key (serverName)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table server comment '服务器';
+
+/*==============================================================*/
 /* Table: agent_log                                             */
 /*==============================================================*/
 create table agent_log
@@ -159,7 +197,9 @@ create table agent_log
    status               varchar(10) not null comment '状态',
    detail               varchar(200) not null comment '详情',
    recordTime           datetime not null comment '记录时间',
-   primary key (id)
+   primary key (id),
+   constraint FK_server_agentlog foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -182,6 +222,22 @@ engine = InnoDB;
 alter table api comment 'API访问';
 
 /*==============================================================*/
+/* Table: language                                              */
+/*==============================================================*/
+create table language
+(
+   languageId           int not null auto_increment comment '语言id',
+   languageName         varchar(20) not null comment '语言名称',
+   createTime           datetime not null comment '创建时间',
+   updateTime           datetime not null comment '修改时间',
+   primary key (languageId)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table language comment '语言';
+
+/*==============================================================*/
 /* Table: channel                                               */
 /*==============================================================*/
 create table channel
@@ -196,12 +252,34 @@ create table channel
    languageId           int not null comment '语言id',
    createTime           datetime not null comment '创建时间',
    updateTime           datetime not null comment '修改时间',
-   primary key (channelId)
+   primary key (channelId),
+   constraint FK_language_channel foreign key (languageId)
+      references language (languageId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
 
 alter table channel comment '节目';
+
+/*==============================================================*/
+/* Table: directory                                             */
+/*==============================================================*/
+create table directory
+(
+   directoryId          int not null auto_increment comment '目录id',
+   parentId             int comment '目录父id',
+   directoryName        varchar(20) not null comment '目录名称',
+   showOrder            int not null comment '显示顺序',
+   createTime           datetime not null comment '创建时间',
+   updateTime           datetime not null comment '修改时间',
+   primary key (directoryId),
+   constraint FK_directory_directory foreign key (parentId)
+      references directory (directoryId) on delete cascade on update cascade
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table directory comment '目录';
 
 /*==============================================================*/
 /* Table: channel_directory                                     */
@@ -210,7 +288,11 @@ create table channel_directory
 (
    directoryId          int not null comment '目录id',
    channelId            int not null comment '节目id',
-   primary key (directoryId, channelId)
+   primary key (directoryId, channelId),
+   constraint FK_channel_directory foreign key (directoryId)
+      references directory (directoryId) on delete cascade on update cascade,
+   constraint FK_channel_directory2 foreign key (channelId)
+      references channel (channelId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -235,30 +317,14 @@ create table cpu
    ncpu                 int not null comment 'CPU核数',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server)
+   primary key (recordTime, server),
+   constraint FK_server_cpu foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
 
 alter table cpu comment 'CPU';
-
-/*==============================================================*/
-/* Table: directory                                             */
-/*==============================================================*/
-create table directory
-(
-   directoryId          int not null auto_increment comment '目录id',
-   parentId             int comment '目录父id',
-   directoryName        varchar(20) not null comment '目录名称',
-   showOrder            int not null comment '显示顺序',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
-   primary key (directoryId)
-)
-charset = UTF8
-engine = InnoDB;
-
-alter table directory comment '目录';
 
 /*==============================================================*/
 /* Table: disk                                                  */
@@ -272,7 +338,9 @@ create table disk
    freePercent          decimal(15,2) not null comment '磁盘可用量百分比',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server)
+   primary key (recordTime, server),
+   constraint FK_server_disk foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -297,28 +365,14 @@ create table io
    utilize              decimal(15,2) not null comment 'CPU等待IO请求时间',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server, deviceName)
+   primary key (recordTime, server, deviceName),
+   constraint FK_server_io foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
 
 alter table io comment '输入输出';
-
-/*==============================================================*/
-/* Table: language                                              */
-/*==============================================================*/
-create table language
-(
-   languageId           int not null auto_increment comment '语言id',
-   languageName         varchar(20) not null comment '语言名称',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
-   primary key (languageId)
-)
-charset = UTF8
-engine = InnoDB;
-
-alter table language comment '语言';
 
 /*==============================================================*/
 /* Table: loads                                                 */
@@ -332,7 +386,9 @@ create table loads
    processTotal         decimal(8,2) not null comment '总进程数',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server)
+   primary key (recordTime, server),
+   constraint FK_server_load foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -352,7 +408,9 @@ create table memory
    utilize              decimal(15,2) not null comment '内存使用率',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server)
+   primary key (recordTime, server),
+   constraint FK_server_memory foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -373,7 +431,9 @@ create table menu
    icon                 varchar(100) not null comment '图标',
    createTime           datetime not null comment '创建时间',
    updateTime           datetime not null comment '修改时间',
-   primary key (id)
+   primary key (id),
+   constraint FK_menu_menu foreign key (parentId)
+      references menu (id) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -387,7 +447,9 @@ create table mysql
 (
    status               bool not null comment '状态',
    server               varchar(128) not null comment '所属服务器',
-   primary key (server)
+   primary key (server),
+   constraint FK_server_mysql foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -408,7 +470,9 @@ create table mysql_info
    sendTraffic          int not null comment '每秒发送流量（KB）',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (server, recordTime)
+   primary key (server, recordTime),
+   constraint FK_server_mysqlinfo foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -422,7 +486,9 @@ create table nginx
 (
    status               bool not null comment '状态',
    server               varchar(128) not null comment '所属服务器',
-   primary key (server)
+   primary key (server),
+   constraint FK_server_nginx foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -446,7 +512,9 @@ create table nginx_info
    responseTime         float not null comment '平均响应时间',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server)
+   primary key (recordTime, server),
+   constraint FK_server_nginxinfo foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -464,28 +532,16 @@ create table online_client
    Ip                   varchar(30) not null comment 'Ip',
    startTime            datetime not null comment '开始时间',
    totalTime            int not null comment '观看时长',
-   primary key (accountId, server, stream)
+   primary key (accountId, server, stream),
+   constraint FK_server_onlineclient foreign key (server)
+      references server (serverName) on delete cascade on update cascade,
+   constraint FK_account_onlineclient foreign key (accountId)
+      references account (accountId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
 
 alter table online_client comment '在线用户';
-
-/*==============================================================*/
-/* Table: product                                               */
-/*==============================================================*/
-create table product
-(
-   productId            int not null auto_increment comment '产品id',
-   productName          varchar(20) not null comment '产品名称',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
-   primary key (productId)
-)
-charset = UTF8
-engine = InnoDB;
-
-alter table product comment '产品包';
 
 /*==============================================================*/
 /* Table: product_channel                                       */
@@ -494,7 +550,11 @@ create table product_channel
 (
    productId            int not null comment '产品id',
    channelId            int not null comment '节目id',
-   primary key (productId, channelId)
+   primary key (productId, channelId),
+   constraint FK_product_channel foreign key (productId)
+      references product (productId) on delete cascade on update cascade,
+   constraint FK_product_channel2 foreign key (channelId)
+      references channel (channelId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -514,7 +574,11 @@ create table productcard
    accountId            varchar(20) comment '使用账户id',
    createTime           datetime not null comment '创建时间',
    updateTime           datetime not null comment '修改时间',
-   primary key (cardNumber)
+   primary key (cardNumber),
+   constraint FK_product_productcard foreign key (productId)
+      references product (productId) on delete cascade on update restrict,
+   constraint FK_account_productcard foreign key (accountId)
+      references account (accountId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -532,31 +596,14 @@ create table realtime
    diskUtilize          decimal(8,2) not null comment '磁盘利用率',
    load1                decimal(8,2) not null comment '1分钟负载',
    recordTime           datetime not null comment '记录时间',
-   primary key (server)
+   primary key (server),
+   constraint FK_server_realtime foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
 
 alter table realtime comment '实时';
-
-/*==============================================================*/
-/* Table: server                                                */
-/*==============================================================*/
-create table server
-(
-   serverName           varchar(128) not null comment '服务器名称',
-   serverIp             varchar(30) not null comment '服务器Ip',
-   status               bool not null comment '服务器状态',
-   operatingSystem      varchar(50) not null comment '操作系统',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '更新时间',
-   primary key (serverName),
-   unique key AK_host_key (serverName)
-)
-charset = UTF8
-engine = InnoDB;
-
-alter table server comment '服务器';
 
 /*==============================================================*/
 /* Table: stb_log                                               */
@@ -586,7 +633,11 @@ create table stbbind
    bindDay              int not null comment '绑定期限',
    isActive             int not null comment '是否激活',
    activeDate           date comment '激活时间',
-   primary key (productId, accountId)
+   primary key (productId, accountId),
+   constraint FK_stbbind foreign key (productId)
+      references product (productId) on delete cascade on update cascade,
+   constraint FK_stbbind2 foreign key (accountId)
+      references account (accountId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -605,7 +656,9 @@ create table stream
    server               varchar(128) not null comment '所属服务器',
    createTime           datetime not null comment '创建时间',
    updateTime           datetime not null comment '更新时间',
-   primary key (streamName, server)
+   primary key (streamName, server),
+   constraint FK_server_stream foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -629,7 +682,9 @@ create table stream_info
    writeByte            int not null comment '进程io写字节',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (streamName, recordTime, server)
+   primary key (streamName, recordTime, server),
+   constraint FK_server_streaminfo foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -649,7 +704,11 @@ create table streaming_access_log
    startTime            datetime not null comment '开始时间',
    endTime              datetime not null comment '结束时间',
    totalTime            int not null comment '总时长',
-   primary key (id)
+   primary key (id),
+   constraint FK_server_streamingaccesslog foreign key (server)
+      references server (serverName) on delete cascade on update cascade,
+   constraint FK_account_streamingaccesslog foreign key (accountId)
+      references account (accountId) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -667,7 +726,9 @@ create table streaming_log
    status               varchar(10) not null comment '状态',
    detail               varchar(200) not null comment '详情',
    recordTime           datetime not null comment '记录时间',
-   primary key (id)
+   primary key (id),
+   constraint FK_server_streaminglog foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
@@ -701,138 +762,44 @@ create table traffic
    packetOut            decimal(15,2) not null comment '出口包数',
    recordTime           datetime not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
-   primary key (recordTime, server, port)
+   primary key (recordTime, server, port),
+   constraint FK_server_traffic foreign key (server)
+      references server (serverName) on delete cascade on update cascade
 )
 charset = UTF8
 engine = InnoDB;
 
 alter table traffic comment '流量';
 
-alter table account_product add constraint FK_account_product foreign key (accountId)
-      references account (accountId) on delete cascade on update cascade;
-
-alter table account_product add constraint FK_account_product2 foreign key (productId)
-      references product (productId) on delete cascade on update cascade;
-
-alter table agent_log add constraint FK_server_agentlog foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table channel add constraint FK_language_channel foreign key (languageId)
-      references language (languageId) on delete cascade on update cascade;
-
-alter table channel_directory add constraint FK_channel_directory foreign key (directoryId)
-      references directory (directoryId) on delete cascade on update cascade;
-
-alter table channel_directory add constraint FK_channel_directory2 foreign key (channelId)
-      references channel (channelId) on delete cascade on update cascade;
-
-alter table cpu add constraint FK_server_cpu foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table directory add constraint FK_directory_directory foreign key (parentId)
-      references directory (directoryId) on delete cascade on update cascade;
-
-alter table disk add constraint FK_server_disk foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table io add constraint FK_server_io foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table loads add constraint FK_server_load foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table memory add constraint FK_server_memory foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table menu add constraint FK_menu_menu foreign key (parentId)
-      references menu (id) on delete cascade on update cascade;
-
-alter table mysql add constraint FK_server_mysql foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table mysql_info add constraint FK_server_mysqlinfo foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table nginx add constraint FK_server_nginx foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table nginx_info add constraint FK_server_nginxinfo foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table online_client add constraint FK_account_onlineclient foreign key (accountId)
-      references account (accountId) on delete cascade on update cascade;
-
-alter table online_client add constraint FK_server_onlineclient foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table product_channel add constraint FK_product_channel foreign key (productId)
-      references product (productId) on delete cascade on update cascade;
-
-alter table product_channel add constraint FK_product_channel2 foreign key (channelId)
-      references channel (channelId) on delete cascade on update cascade;
-
-alter table productcard add constraint FK_account_productcard foreign key (accountId)
-      references account (accountId) on delete cascade on update cascade;
-
-alter table productcard add constraint FK_product_productcard foreign key (productId)
-      references product (productId) on delete cascade on update restrict;
-
-alter table realtime add constraint FK_server_realtime foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table stbbind add constraint FK_stbbind foreign key (productId)
-      references product (productId) on delete cascade on update cascade;
-
-alter table stbbind add constraint FK_stbbind2 foreign key (accountId)
-      references account (accountId) on delete cascade on update cascade;
-
-alter table stream add constraint FK_server_stream foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table stream_info add constraint FK_server_streaminfo foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table streaming_access_log add constraint FK_account_streamingaccesslog foreign key (accountId)
-      references account (accountId) on delete cascade on update cascade;
-
-alter table streaming_access_log add constraint FK_server_streamingaccesslog foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table streaming_log add constraint FK_server_streaminglog foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
-alter table traffic add constraint FK_server_traffic foreign key (server)
-      references server (serverName) on delete cascade on update cascade;
-
 
 DELIMITER ;;
 CREATE PROCEDURE updateServerState()
 BEGIN
     DECLARE Done INT DEFAULT 0;
-	DECLARE pserver VARCHAR(128);
-	DECLARE precordtime DATETIME;
-	DECLARE pstatus TINYINT; 
-	DECLARE pdiff INT;
-	DECLARE pcursor CURSOR FOR SELECT server,recordTime FROM realtime;
+   DECLARE pserver VARCHAR(128);
+   DECLARE precordtime DATETIME;
+   DECLARE pstatus TINYINT; 
+   DECLARE pdiff INT;
+   DECLARE pcursor CURSOR FOR SELECT server,recordTime FROM realtime;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET Done = 1;
-	OPEN pcursor;
-	FETCH NEXT FROM pcursor INTO pserver,precordtime;
-	REPEAT
-		IF NOT Done THEN
-			#SELECT pserver,precordtime;
-			SELECT TIMESTAMPDIFF(MINUTE,precordtime,NOW()) INTO pdiff;
-			SELECT status INTO pstatus FROM `server` WHERE serverName=pserver;
-			IF pdiff > 1 && pstatus = 1 THEN
-				UPDATE `server` SET `status`=0 WHERE serverName=pserver;
-			END IF;
-			IF pdiff < 1 && pstatus = 0 THEN
-				UPDATE `server` SET `status`=1 WHERE serverName=pserver;
-			END IF;
-			#SELECT pstatus;
-		END IF;
-		FETCH NEXT FROM pcursor INTO pserver,precordtime;
-	UNTIL Done END REPEAT;
-	CLOSE pcursor;
+   OPEN pcursor;
+   FETCH NEXT FROM pcursor INTO pserver,precordtime;
+   REPEAT
+      IF NOT Done THEN
+         #SELECT pserver,precordtime;
+         SELECT TIMESTAMPDIFF(MINUTE,precordtime,NOW()) INTO pdiff;
+         SELECT status INTO pstatus FROM `server` WHERE serverName=pserver;
+         IF pdiff > 1 && pstatus = 1 THEN
+            UPDATE `server` SET `status`=0 WHERE serverName=pserver;
+         END IF;
+         IF pdiff < 1 && pstatus = 0 THEN
+            UPDATE `server` SET `status`=1 WHERE serverName=pserver;
+         END IF;
+         #SELECT pstatus;
+      END IF;
+      FETCH NEXT FROM pcursor INTO pserver,precordtime;
+   UNTIL Done END REPEAT;
+   CLOSE pcursor;
 END
 ;;
 DELIMITER ;
@@ -844,3 +811,17 @@ DELIMITER ;;
 CREATE EVENT callUpdateProcedure ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerState
 ;;
 DELIMITER ;
+
+# trigger
+DROP TRIGGER IF EXISTS `insertApp`;
+DELIMITER ;;
+CREATE TRIGGER `insertApp` 
+AFTER INSERT ON `server` 
+FOR EACH ROW 
+BEGIN
+insert into mysql values (1, new.serverName );
+insert into nginx values (1, new.serverName );
+END
+;;
+DELIMITER ;
+
