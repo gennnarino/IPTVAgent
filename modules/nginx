@@ -3,25 +3,50 @@
 # source functions
 . /usr/local/IPTVAgent/lib/functions
 
-exec 2>/dev/null
+recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
 server=`hostname`
 
-#get nginx status
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+# nginx process count
+status=0
+count=`ps -ef|grep nginx|grep master|grep -v grep|wc -l`
+if [ $count -eq 0 ];then
+    status=0
+    SQLUPDATE="update nginx set status=$status where server=\"$server\"" 
+    SQLINSERT="insert into nginx_info(status,accept,handle,request,active,readRequest,writeRequest,wait,qps,responseTime,recordTime,server) values($status,-1,-1,-1,-1,-1,-1,-1,-1,-1,\"$recordTime\",\"$server\");"
+    insert $SQLUPDATE
+    insert $SQLINSERT
+    exit 1
+else
+    status=1
+    SQLUPDATE="update nginx set status=$status where server=\"$server\""
+    insert $SQLUPDATE
+fi
+
+#get nginx_status http code
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1/nginx_status)
+
+if [ $code -eq 404 ]; then 
+    SQLINSERT="insert into nginx_info(status,accept,handle,request,active,readRequest,writeRequest,wait,qps,responseTime,recordTime,server) values($status,-1,-1,-1,-1,-1,-1,-1,-1,-1,\"$recordTime\",\"$server\");"
+    insert $SQLINSERT
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] [nginx] you should configurate nginx status in nginx.conf file" >> $logPath/iptvagent.log
+   exit 1 
+fi
+
 result=$(echo `curl http://127.0.0.1/nginx_status`)
 
 if (`test -n "$result"`); then
-accept=$(echo $result|awk 'NR=4{print $8}')
-handle=$(echo $result|awk 'NR=4{print $9}')
-active=$(echo $result|awk 'NR=4{print $3}')
-request=$(echo $result|awk 'NR=4{print $10}')
-readRequest=$(echo $result|awk 'NR=4{print $12}')
-writeRequest=$(echo $result|awk 'NR=4{print $14}')
-wait=$(echo $result|awk 'NR=4{print $16}')
-qps=0
-responseTime=0
-
-SQLINSERT="insert into nginx(accept,handle,request,active,readRequest,writeRequest,wait,readByte,writeByte,wait,qps,responseTime,recordTime,server) values($accept,$handle,$request,$active,$readRequest,$writeRequest,$wait,-1,-1,\"$recordTime\",\"$server\");"
+    accept=$(echo $result|awk 'NR=4{print $8}')
+    handle=$(echo $result|awk 'NR=4{print $9}')
+    active=$(echo $result|awk 'NR=4{print $3}')
+    request=$(echo $result|awk 'NR=4{print $10}')
+    readRequest=$(echo $result|awk 'NR=4{print $12}')
+    writeRequest=$(echo $result|awk 'NR=4{print $14}')
+    wait=$(echo $result|awk 'NR=4{print $16}')
+    qps=0
+    responseTime=0
+    
+    SQLINSERT="insert into nginx_info(status,accept,handle,request,active,readRequest,writeRequest,wait,qps,responseTime,recordTime,server) values($status,$accept,$handle,$request,$active,$readRequest,$writeRequest,$wait,$qps,$responseTime,\"$recordTime\",\"$server\");"
 fi
 
 echo $SQLINSERT
+insert $SQLINSERT

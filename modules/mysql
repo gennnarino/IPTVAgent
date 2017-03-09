@@ -23,27 +23,29 @@ recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
 result="$($MYSQL -h$LHOST -u$LUSER -p$LPASSWORD -N -e "$select")"
 
 if (`test -n "$resultPrev"`&&`test -n "$result"`);then
-#if results not null, process the results acquired
-bytesReceivedPrev=$(echo $resultPrev | awk '{print $2}')
-bytesReceived=$(echo $result | awk '{print $2}')
-bytesSentPrev=$(echo $resultPrev | awk '{print $4}')
-bytesSent=$(echo $result | awk '{print $4}')
-com_commitPrev=$(echo $resultPrev | awk '{print $6}')
-com_commit=$(echo $result | awk '{print $6}')
-com_rollbackPrev=$(echo $resultPrev | awk '{print $8}')
-com_rollback=$(echo $result | awk '{print $8}')
-questionsPrev=$(echo $resultPrev | awk '{print $10}')
-questions=$(echo $result | awk '{print $10}')
-let "receiveTraffic=$bytesReceived-$bytesReceivedPrev"
-let "sendTraffic=$bytesSent-$bytesSentPrev"
-let "qps=$questions-$questionsPrev"
-let "tps=($com_commit+$com_rollback)-($com_commitPrev+$com_rollbackPrev)"
-totalConnections=$(echo $result | awk '{print $12}')
-activeConnections=$(echo $result | awk '{print $14}') 
-SQLINSERT="insert into mysql_info(status,totalConnections,activeConnections,qps,tps,receiveTraffic,sendTraffic,recordTime,server) values(1,$totalConnections,$activeConnections,$qps,$tps,$receiveTraffic,$sendTraffic,\"$recordTime\",\"$server\");"
-else 
-SQLINSERT="insert into mysql_info(status,totalConnections,activeConnections,qps,tps,receiveTraffic,sendTraffic,recordTime,server) values(0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
+    #if results not null, process the results acquired
+    bytesReceivedPrev=$(echo $resultPrev | awk '{print $2}')
+    bytesReceived=$(echo $result | awk '{print $2}')
+    bytesSentPrev=$(echo $resultPrev | awk '{print $4}')
+    bytesSent=$(echo $result | awk '{print $4}')
+    com_commitPrev=$(echo $resultPrev | awk '{print $6}')
+    com_commit=$(echo $result | awk '{print $6}')
+    com_rollbackPrev=$(echo $resultPrev | awk '{print $8}')
+    com_rollback=$(echo $result | awk '{print $8}')
+    questionsPrev=$(echo $resultPrev | awk '{print $10}')
+    questions=$(echo $result | awk '{print $10}')
+    let "receiveTraffic=$bytesReceived-$bytesReceivedPrev"
+    let "sendTraffic=$bytesSent-$bytesSentPrev"
+    let "qps=$questions-$questionsPrev"
+    let "tps=($com_commit+$com_rollback)-($com_commitPrev+$com_rollbackPrev)"
+    totalConnections=$(echo $result | awk '{print $12}')
+    activeConnections=$(echo $result | awk '{print $14}') 
+    SQLUPDATE="update mysql set status=1 where server=\"$server\""
+    SQLINSERT="insert into mysql_info(status,totalConnections,activeConnections,qps,tps,receiveTraffic,sendTraffic,recordTime,server) values(1,$totalConnections,$activeConnections,$qps,$tps,$receiveTraffic,$sendTraffic,\"$recordTime\",\"$server\");"
+else
+    SQLUPDATE="update mysql set status=0 where server=\"$server\""    SQLINSERT="insert into mysql_info(status,totalConnections,activeConnections,qps,tps,receiveTraffic,sendTraffic,recordTime,server) values(0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
 fi
 
 echo $SQLINSERT
+insert $SQLUPDATE
 insert $SQLINSERT
