@@ -1,6 +1,6 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2017/3/9 13:50:03                            */
+/* Created on:     2017/3/13 16:48:24                           */
 /*==============================================================*/
 drop database if exists iptvm;
 create database iptvm default character set utf8 collate utf8_general_ci;
@@ -84,8 +84,8 @@ create table account
    accountId            varchar(20) not null comment '使用账户id',
    state                int not null comment '账户状态',
    enable               bool not null comment '是否启用',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (accountId)
 )
 charset = UTF8
@@ -100,8 +100,8 @@ create table product
 (
    productId            int not null auto_increment comment '产品id',
    productName          varchar(20) not null comment '产品名称',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (productId)
 )
 charset = UTF8
@@ -116,7 +116,7 @@ create table account_product
 (
    accountId            varchar(20) not null comment '使用账户id',
    productId            int not null comment '产品id',
-   endDate              date not null comment '到期时间',
+   endDate              bigint not null comment '到期时间',
    primary key (accountId, productId),
    constraint FK_account_product foreign key (accountId)
       references account (accountId) on delete cascade on update cascade,
@@ -136,7 +136,7 @@ create table admin_log
    id                   bigint not null auto_increment comment 'id',
    level                int comment '级别',
    category             varchar(255) comment '类别',
-   log_time             datetime comment '日志时间',
+   log_time             bigint comment '日志时间',
    prefix               text comment '前缀',
    message              text comment '日志信息',
    primary key (id)
@@ -157,10 +157,10 @@ create table administrator
    realName             varchar(20) not null comment '真实姓名',
    email                varchar(50) not null comment '邮箱',
    type                 bool not null comment '类型',
-   lastLoginTime        datetime not null comment '最后登录时间',
+   lastLoginTime        bigint not null comment '最后登录时间',
    authKey              varchar(20) not null comment 'yii密钥',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (id)
 )
 charset = UTF8
@@ -177,8 +177,8 @@ create table server
    serverIp             varchar(30) not null comment '服务器Ip',
    status               bool not null comment '服务器状态',
    operatingSystem      varchar(50) not null comment '操作系统',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '更新时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '更新时间',
    primary key (serverName)
 )
 charset = UTF8
@@ -196,7 +196,7 @@ create table agent_log
    server               varchar(128) not null comment '所在服务器',
    status               varchar(10) not null comment '状态',
    detail               varchar(200) not null comment '详情',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    primary key (id),
    constraint FK_server_agentlog foreign key (server)
       references server (serverName) on delete cascade on update cascade
@@ -228,8 +228,8 @@ create table language
 (
    languageId           int not null auto_increment comment '语言id',
    languageName         varchar(20) not null comment '语言名称',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (languageId)
 )
 charset = UTF8
@@ -250,8 +250,8 @@ create table channel
    urlType              varchar(20) not null comment 'url类型',
    channelType          varchar(10) not null comment '节目类型',
    languageId           int not null comment '语言id',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (channelId),
    constraint FK_language_channel foreign key (languageId)
       references language (languageId) on delete cascade on update cascade
@@ -270,8 +270,8 @@ create table directory
    parentId             int comment '目录父id',
    directoryName        varchar(20) not null comment '目录名称',
    showOrder            int not null comment '显示顺序',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (directoryId),
    constraint FK_directory_directory foreign key (parentId)
       references directory (directoryId) on delete cascade on update cascade
@@ -315,7 +315,7 @@ create table cpu
    utilize              decimal(8,2) not null comment 'CPU总使用时间百分比',
    idle                 decimal(8,2) not null comment 'CPU空闲时间百分比',
    ncpu                 int not null comment 'CPU核数',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (recordTime, server),
    constraint FK_server_cpu foreign key (server)
@@ -336,7 +336,7 @@ create table disk
    total                decimal(15,2) not null comment '磁盘总大小（G）',
    usedPercent          decimal(15,2) not null comment '磁盘已用量百分比',
    freePercent          decimal(15,2) not null comment '磁盘可用量百分比',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (recordTime, server),
    constraint FK_server_disk foreign key (server)
@@ -363,7 +363,7 @@ create table io
    await                decimal(15,2) not null comment '处理IO请求平均耗时',
    scvtm                decimal(15,2) not null comment '服务IO请求平均耗时',
    utilize              decimal(15,2) not null comment 'CPU等待IO请求时间',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (recordTime, server, deviceName),
    constraint FK_server_io foreign key (server)
@@ -384,7 +384,7 @@ create table loads
    load15               decimal(8,2) not null comment '十五分钟平均负载',
    processRun           decimal(8,2) not null comment '运行的进程数',
    processTotal         decimal(8,2) not null comment '总进程数',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (recordTime, server),
    constraint FK_server_load foreign key (server)
@@ -406,7 +406,7 @@ create table memory
    cache                decimal(15,2) not null comment 'cache（Byte）',
    total                decimal(15,2) not null comment '总内存（Byte）',
    utilize              decimal(15,2) not null comment '内存使用率',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (recordTime, server),
    constraint FK_server_memory foreign key (server)
@@ -429,8 +429,8 @@ create table menu
    showLevel            int not null comment '显示级别',
    showOrder            int not null comment '显示顺序',
    icon                 varchar(100) not null comment '图标',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (id),
    constraint FK_menu_menu foreign key (parentId)
       references menu (id) on delete cascade on update cascade
@@ -468,7 +468,7 @@ create table mysql_info
    tps                  int not null comment '每秒事务数',
    receiveTraffic       int not null comment '每秒接收流量（KB）',
    sendTraffic          int not null comment '每秒发送流量（KB）',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (server, recordTime),
    constraint FK_server_mysqlinfo foreign key (server)
@@ -510,7 +510,7 @@ create table nginx_info
    wait                 int not null comment '长连接等待的连接数',
    qps                  int not null comment '每秒处理请求数',
    responseTime         float not null comment '平均响应时间',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (recordTime, server),
    constraint FK_server_nginxinfo foreign key (server)
@@ -530,7 +530,7 @@ create table online_client
    server               varchar(128) not null comment '访问服务器',
    stream               varchar(64) not null comment '访问流',
    Ip                   varchar(30) not null comment 'Ip',
-   startTime            datetime not null comment '开始时间',
+   startTime            bigint not null comment '开始时间',
    totalTime            int not null comment '观看时长',
    primary key (accountId, server, stream),
    constraint FK_server_onlineclient foreign key (server)
@@ -570,10 +570,10 @@ create table productcard
    cardValue            int not null comment '充值卡时长',
    productId            int not null comment '产品id',
    cardState            bool not null comment '充值卡状态',
-   useDate              date comment '充值卡使用时间',
+   useDate              bigint comment '充值卡使用时间',
    accountId            varchar(20) comment '使用账户id',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '修改时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '修改时间',
    primary key (cardNumber),
    constraint FK_product_productcard foreign key (productId)
       references product (productId) on delete cascade on update restrict,
@@ -595,7 +595,7 @@ create table realtime
    memoryUtilize        decimal(8,2) not null comment '内存利用率',
    diskUtilize          decimal(8,2) not null comment '磁盘利用率',
    load1                decimal(8,2) not null comment '1分钟负载',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    primary key (server),
    constraint FK_server_realtime foreign key (server)
       references server (serverName) on delete cascade on update cascade
@@ -613,7 +613,7 @@ create table stb_log
    id                   bigint not null auto_increment comment 'id',
    level                int comment '级别',
    category             varchar(255) comment '类别',
-   log_time             datetime comment '日志时间',
+   log_time             bigint comment '日志时间',
    prefix               text comment '前缀',
    message              text comment '日志信息',
    primary key (id)
@@ -632,7 +632,7 @@ create table stbbind
    accountId            varchar(20) not null comment '使用账户id',
    bindDay              int not null comment '绑定期限',
    isActive             int not null comment '是否激活',
-   activeDate           date comment '激活时间',
+   activeDate           bigint comment '激活时间',
    primary key (productId, accountId),
    constraint FK_stbbind foreign key (productId)
       references product (productId) on delete cascade on update cascade,
@@ -654,8 +654,8 @@ create table stream
    source               varchar(256) not null comment '流源',
    sourceStatus         bool not null comment '流源状态',
    server               varchar(128) not null comment '所属服务器',
-   createTime           datetime not null comment '创建时间',
-   updateTime           datetime not null comment '更新时间',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '更新时间',
    primary key (streamName, server),
    constraint FK_server_stream foreign key (server)
       references server (serverName) on delete cascade on update cascade
@@ -680,7 +680,7 @@ create table stream_info
    rss                  int not null comment '物理内存消耗（KB）',
    readByte             int not null comment '进程io读字节',
    writeByte            int not null comment '进程io写字节',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (streamName, recordTime, server),
    constraint FK_server_streaminfo foreign key (server)
@@ -701,8 +701,8 @@ create table streaming_access_log
    server               varchar(128) not null comment '访问服务器',
    stream               varchar(64) not null comment '访问流',
    Ip                   varchar(30) not null comment 'Ip',
-   startTime            datetime not null comment '开始时间',
-   endTime              datetime not null comment '结束时间',
+   startTime            bigint not null comment '开始时间',
+   endTime              bigint not null comment '结束时间',
    totalTime            int not null comment '总时长',
    primary key (id),
    constraint FK_server_streamingaccesslog foreign key (server)
@@ -725,7 +725,7 @@ create table streaming_log
    server               varchar(128) not null comment '所属服务器',
    status               varchar(10) not null comment '状态',
    detail               varchar(200) not null comment '详情',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    primary key (id),
    constraint FK_server_streaminglog foreign key (server)
       references server (serverName) on delete cascade on update cascade
@@ -760,7 +760,7 @@ create table traffic
    byteOut              decimal(15,2) not null comment '出口流量',
    packetIn             decimal(15,2) not null comment '入口包数',
    packetOut            decimal(15,2) not null comment '出口包数',
-   recordTime           datetime not null comment '记录时间',
+   recordTime           bigint not null comment '记录时间',
    server               varchar(128) not null comment '所属服务器',
    primary key (recordTime, server, port),
    constraint FK_server_traffic foreign key (server)
@@ -772,49 +772,41 @@ engine = InnoDB;
 alter table traffic comment '流量';
 
 
-DELIMITER ;;
+DELIMITER $$
 CREATE PROCEDURE updateServerState()
 BEGIN
     DECLARE Done INT DEFAULT 0;
-   DECLARE pserver VARCHAR(128);
-   DECLARE precordtime DATETIME;
-   DECLARE pstatus TINYINT; 
-   DECLARE pdiff INT;
-   DECLARE pcursor CURSOR FOR SELECT server,recordTime FROM realtime;
+	DECLARE pserver VARCHAR(128);
+	DECLARE precordtime BIGINT;
+	DECLARE pstatus TINYINT; 
+	DECLARE pdiff INT;
+	DECLARE pcursor CURSOR FOR SELECT server,recordTime FROM realtime;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET Done = 1;
-   OPEN pcursor;
-   FETCH NEXT FROM pcursor INTO pserver,precordtime;
-   REPEAT
-      IF NOT Done THEN
-         #SELECT pserver,precordtime;
-         SELECT TIMESTAMPDIFF(MINUTE,precordtime,NOW()) INTO pdiff;
-         SELECT status INTO pstatus FROM `server` WHERE serverName=pserver;
-         IF pdiff > 1 && pstatus = 1 THEN
-            UPDATE `server` SET `status`=0 WHERE serverName=pserver;
-         END IF;
-         IF pdiff < 1 && pstatus = 0 THEN
-            UPDATE `server` SET `status`=1 WHERE serverName=pserver;
-         END IF;
-         #SELECT pstatus;
-      END IF;
-      FETCH NEXT FROM pcursor INTO pserver,precordtime;
-   UNTIL Done END REPEAT;
-   CLOSE pcursor;
+	OPEN pcursor;
+	FETCH NEXT FROM pcursor INTO pserver,precordtime;
+	REPEAT
+		IF NOT Done THEN
+			#SELECT pserver,precordtime;
+			SELECT UNIX_TIMESTAMP(NOW())-precordtime INTO pdiff;
+			SELECT status INTO pstatus FROM `server` WHERE serverName=pserver;
+			IF pdiff > 60 && pstatus = 1 THEN
+				UPDATE `server` SET `status`=0 WHERE serverName=pserver;
+			END IF;
+			IF pdiff < 60 && pstatus = 0 THEN
+				UPDATE `server` SET `status`=1 WHERE serverName=pserver;
+			END IF;
+			#SELECT pstatus;
+		END IF;
+		FETCH NEXT FROM pcursor INTO pserver,precordtime;
+	UNTIL Done END REPEAT;
+	CLOSE pcursor;
 END
-;;
-DELIMITER ;
-
-# scheduler event
-SET GLOBAL event_scheduler = 1;
-DROP EVENT IF EXISTS callUpdateProcedure;
-DELIMITER ;;
-CREATE EVENT callUpdateProcedure ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerState
-;;
+$$
 DELIMITER ;
 
 # trigger
 DROP TRIGGER IF EXISTS `insertApp`;
-DELIMITER ;;
+DELIMITER $$
 CREATE TRIGGER `insertApp` 
 AFTER INSERT ON `server` 
 FOR EACH ROW 
@@ -822,6 +814,12 @@ BEGIN
 insert into mysql values (1, new.serverName );
 insert into nginx values (1, new.serverName );
 END
-;;
+$$
 DELIMITER ;
 
+# scheduler event
+SET GLOBAL event_scheduler = 1;
+DROP EVENT IF EXISTS `callUpdateProcedure`;
+DELIMITER $$
+CREATE EVENT `callUpdateProcedure` ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerState
+$$
