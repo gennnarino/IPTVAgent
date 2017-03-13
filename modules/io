@@ -26,7 +26,8 @@ rstPrev=$(cat /proc/diskstats \
 sleep 1s
 
 # Get the IO statistics for the second time
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+#recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+recordTime=`date +"%s"`
 rst=$(cat /proc/diskstats \
     |sed 's/':'/''/' \
 	|awk  -F' '  '  {   
