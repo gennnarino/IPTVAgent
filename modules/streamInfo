@@ -28,7 +28,8 @@ getStreamInfo() {
 
         #sleep for a while
         sleep 1
-        recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+        #recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+        recordTime=`date +"%s"`
 
         #get process CPU statistics  for the second time
         procCPU=$(cat ${fileProcCPU})
