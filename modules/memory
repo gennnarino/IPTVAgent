@@ -4,8 +4,8 @@
 . /usr/local/IPTVAgent/lib/functions
 
 server=`hostname`
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
-
+#recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+recordTime=`date +"%s"`
 result=$(cat /proc/meminfo \
         | sed 's/':'/''/' \
 	    | awk -F' '   \
