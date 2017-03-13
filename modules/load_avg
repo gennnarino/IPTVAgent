@@ -9,7 +9,8 @@ numberOfCores=$(grep -c 'processor' /proc/cpuinfo)
 if [ $numberOfCores -eq 0 ]; then
 	numberOfCores=1
 fi
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+#recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+recordTime=`date +"%s"`
 rst=$(cat /proc/loadavg | awk '{print ($1*100)/'$numberOfCores'"," ($2*100)/'$numberOfCores' "," ($3*100)/'$numberOfCores'"," $4 }')
 load1=$(echo $rst|awk -F"," '{print $1}')
 load5=$(echo $rst|awk -F"," '{print $2}')
