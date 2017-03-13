@@ -4,8 +4,8 @@
 . /usr/local/IPTVAgent/lib/functions
 
 server=`hostname`
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
-
+#recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+recordTime=`date +"%s"`
 rst=$(df -k | awk 'NR>1{a+=$4;b+=$3;c+=$2}END{print a","b","c}')
 free=$(echo $rst | awk -F ',' '{print $1}')
 free=`echo "scale=2;$free/1024/1024"|bc|awk '{printf "%.2f", $0}'`
