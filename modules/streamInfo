@@ -90,8 +90,8 @@ getStreamInfo() {
         SQLINSERT="insert into stream_info(streamName,status,sourceStatus,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",1,1,$procCPUUserP,$procCPUSystemP,$procCPUTotalP,$memoryP,$RSS,$readByte,$writeByte,\"$recordTime\",\"$server\");"
     else
         #When the process folder doesn't exist
-        ffmpeg -y -timeout 10 -t 1 -i $streamSource -c:a copy -c:v copy -f flv $tmpPath/1.mp4
-        sourceFlag=$?
+        #ffmpeg -y -timeout 10 -t 1 -i $streamSource -c:a copy -c:v copy -f flv $tmpPath/1.mp4
+        sourceFlag=0
         if [ $sourceFlag -ne 0 ]; then
             sourceStatus=0
         else
