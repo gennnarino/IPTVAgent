@@ -19,7 +19,8 @@ resultPrev="$($MYSQL -h$LHOST -u$LUSER -p$LPASSWORD -N -e "$select")"
 sleep 1s
 
 #get mysql info for the second time
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+#recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+recordTime=`date +"%s"`
 result="$($MYSQL -h$LHOST -u$LUSER -p$LPASSWORD -N -e "$select")"
 
 if (`test -n "$resultPrev"`&&`test -n "$result"`);then

@@ -26,7 +26,8 @@ prevGuest=${prevCPU[8]}
 sleep 1
 
 #Get CPU statistics for the second time
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+#recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+recordTime=`date +"%s"`
 CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
 TOTAL=0
 for VALUE in "${CPU[@]}"; 

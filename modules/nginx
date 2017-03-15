@@ -3,7 +3,8 @@
 # source functions
 . /usr/local/IPTVAgent/lib/functions
 
-recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+#recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+recordTime=`date +"%s"`
 server=`hostname`
 
 # nginx process count
