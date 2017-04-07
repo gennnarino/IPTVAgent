@@ -7,12 +7,8 @@
 
 getStreamInfo() {
     server=`hostname`
-    redisCmd=`which redis-cli`
-    streamName=`echo $1`
-    streamSource=`$redisCmd<<EOF
-    hget streams $streamName
-    exit
-    EOF`
+    streamName=$1
+    streamSource=$2
     PID=$(ps -ef|grep  $streamSource |grep -v grep\
         | awk '{{print " "$2" "}}')
     folder=$(echo "/proc/"$PID|sed s/[[:space:]]//g)
@@ -91,13 +87,20 @@ getStreamInfo() {
     else
         #When the process folder doesn't exist
         #ffmpeg -y -timeout 10 -t 1 -i $streamSource -c:a copy -c:v copy -f flv $tmpPath/1.mp4
-        sourceFlag=0
-        if [ $sourceFlag -ne 0 ]; then
-            sourceStatus=0
-        else
+        if [ ! -f $streamingLogPath/${streamName}.log ]; then
             sourceStatus=1
+        else
+            latestTime=`sed -n '/[ERROR]/p' $streamingLogPath/${streamName}.log|tail -1|awk '{print $1,$2}'|cut -c 2-20`
+            latestTime=`date -d "$latestTime" +%s`
+            now=`date +%s`
+            if (( $now - $latestTime > 60 ))
+            then 
+                sourceStatus=1
+            else
+                sourceStatus=0
+            fi
         fi
-        recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
+        recordTime=`date +%s`
         SQLUPDATE="update stream set status=0,sourceStatus=$sourceStatus where server=\"$server\" and streamName=\"$streamName\""
         SQLINSERT="insert into stream_info(streamName,status,sourceStatus,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",0,$sourceStatus,0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
     fi

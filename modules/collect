@@ -14,13 +14,31 @@ recordTime=`date -d today +"%Y-%m-%d %H:%M:%S"`
 echo "[$recordTime] [INFO] Start a new round of collecting">> $logPath/iptvagent.log
 
 # collect information
-$modulePath/memory & 
-$modulePath/load_avg &
-$modulePath/disk &
-$modulePath/cpu &
-$modulePath/traffic &
-$modulePath/mysql &
-$modulePath/nginx &
-$modulePath/streams &
-$modulePath/io &
+if [ $mod_memory = on ]; then
+    $modulePath/memory & 
+fi
+if [ $mod_load = on ]; then
+    $modulePath/load_avg &
+fi
+if [ $mod_disk = on ]; then
+    $modulePath/disk &
+fi
+if [ $mod_cpu = on ]; then
+    $modulePath/cpu &
+fi
+if [ $mod_traffic = on ]; then
+    $modulePath/traffic &
+fi
+if [ $mod_mysql = on ]; then
+    $modulePath/mysql &
+fi
+if [ $mod_nginx = on ]; then
+    $modulePath/nginx &
+fi
+if [ $mod_stream = on ]; then
+    $modulePath/streams &
+fi
+if [ $mod_io = on ]; then
+    $modulePath/io &
+fi
 exit 0

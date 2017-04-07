@@ -3,6 +3,8 @@
 # source cfg file
 . /usr/local/IPTVAgent/cfg/iptvagent.cfg
 
+python $daemonPath/control/server.py > /dev/null 2>&1 &
+
 #continuously call the realtime shell script
 while true 
 do

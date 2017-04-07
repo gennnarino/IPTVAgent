@@ -1,30 +1,34 @@
 #! /bin/bash
 
+installSoftware() {
+    if [ $1 = redis ]; then
+        soft=`which redis-server 2>&1`
+    else
+        soft=`which $1 2>&1`
+    fi
+    if [ $? -eq 0 ]; then
+        return
+    fi
+    echo -e "[\033[1;32mINFO:\033[0m] Install $1 ..."
+    system=$(head -1 /etc/issue|awk '{print $1}')
+    if [ $system = CentOS ]; then
+        yum -y install $1
+    elif [ $system = Ubuntu ]; then
+        if [ $1 = redis ]; then
+            apt-get -y install redis-server
+        else
+            apt-get -y install $1
+        fi
+    else
+        echo -e "[\033[1;31mWARNING:\033[0m] you should install $1 by yourself"
+    fi
+}
+
 echo -e "[\033[1;32mINFO:\033[0m] Start to install IPTV Agent"
 
 # installation path of iptv agent, can be modified
 installPath=/usr/local/IPTVAgent
 
-echo -e  "[\033[1;32mINFO:\033[0m] Install prerequisite software"
-installCentOS="yum -y install "
-installUbuntu="apt-get -y install "
-#install the dependent commands
-SystemName=$(set `head -1 /etc/issue`;echo $1)
-if (`test $SystemName = 'CentOS'`);then
-$installCentOS "awk" 
-$installCentOS "bc" 
-$installCentOS "sed" 
-$installCentOS "curl" 
-$installCentOS "redis" 
-echo
-fi
-if (`test $SystemName = 'Ubuntu'`);then
-$installUbuntu "awk" 
-$installUbuntu "bc" 
-$installUbuntu "sed" 
-$installUbuntu "curl" 
-$installUbuntu "redis-server" 
-fi 
 #mkdir for iptvagent
 if [ ! -d $installPath ]; then
     mkdir -p $installPath
@@ -41,5 +45,13 @@ sed -i "s%/usr/local/IPTVAgent%$installPath%g" `grep /usr/local/IPTVAgent -rl $i
 sed -i "s%/usr/local/IPTVAgent%$installPath%g" uninstall.sh
 
 #find /etc/iptvm/modules/ -type f -exec chmod 744 {} \;
+
+echo -e  "[\033[1;32mINFO:\033[0m] Install prerequisite software"
+#install the dependent commands
+installSoftware awk 
+installSoftware sed 
+installSoftware bc 
+installSoftware curl 
+installSoftware redis
 
 echo -e "[\033[1;32mSTATUS:\033[0m] Install successfully"

@@ -54,7 +54,9 @@ stop() {
 # restart iptvagent
 restart() {
     stop
-    start
+    if [ $? -eq 0 ]; then
+        start
+    fi
 }
 
 # status of iptvagent
