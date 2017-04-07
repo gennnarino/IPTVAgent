@@ -1,7 +1,8 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2017/3/13 16:48:24                           */
+/* Created on:     2017/3/15 22:50:08                           */
 /*==============================================================*/
+
 drop database if exists iptvm;
 create database iptvm default character set utf8 collate utf8_general_ci;
 use iptvm;
@@ -73,6 +74,8 @@ drop table if exists streaming_access_log;
 drop table if exists streaming_log;
 
 drop table if exists threshold;
+
+drop table if exists timezone;
 
 drop table if exists traffic;
 
@@ -749,6 +752,27 @@ charset = UTF8
 engine = InnoDB;
 
 alter table threshold comment '阈值';
+
+/*==============================================================*/
+/* Table: timezone                                              */
+/*==============================================================*/
+create table timezone
+(
+   timezone             varchar(50) not null comment '时区名',
+   isCurrent            bool not null comment '目前时区',
+   status               bool not null comment '启用状态',
+   continent            varchar(50) not null comment '大洲',
+   country              varchar(50) not null comment '国家',
+   icon                 varchar(100) not null comment '图标',
+   chinese              varchar(50) not null comment '中文名称',
+   createTime           bigint not null comment '创建时间',
+   updateTime           bigint not null comment '更新时间',
+   primary key (timezone)
+)
+charset = UTF8
+engine = InnoDB;
+
+alter table timezone comment '时区';
 
 /*==============================================================*/
 /* Table: traffic                                               */
