@@ -3,7 +3,7 @@ from params import Parameter
 from handler import ConnectionThread
 
 HOST = Parameter.configParse('localIP')
-PORT = 9000
+PORT = int(Parameter.configParse('localPort'))
 
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

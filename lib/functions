@@ -34,11 +34,6 @@ insert() {
 
 # initialize the directories
 initDir() {
-    if [ $streamOrigin = xml ]; then
-        if [ ! -d $streamPath ]; then
-            mkdir -p $streamPath
-        fi
-    fi
     if [ ! -d $logPath ]; then
         mkdir -p $logPath
     fi
@@ -52,50 +47,20 @@ rmDir() {
     if [ -d $tmpPath ]; then
         rm -rf $tmpPath
     fi
-    if [ -d $streamPath ]; then
-        rm -rf $streamPath
-    fi
-}
-
-# parse xml node to stream files whose name is name node and content is source node 
-xml2streams() {
-    pythonCmd=`which python`
-    if [ $? -ne 0 ]; then
-        echo -e "[\033[1;31mERROR:\033[0m] python is not installed"
-        return 1
-    fi
-    if [ ! -f $xmlPath ]; then
-        echo -e "[\033[1;31mERROR:\033[0m] xml file doesn't exist in $xmlPath"
-        return 1
-    fi
-    $pythonCmd $libPath/xmlParser.py $xmlPath $streamPath
-    if [ $? -ne 0 ]; then
-        echo -e "[\033[1;31mERROR:\033[0m] xmlFile to stream files failed"
-        return 1
-    fi
-    return 0
 }
 
 # start iptvagent
 startAgent(){
+    pythonCmd=`which python`
     initDir
-    if [ $streamOrigin = xml ]; then
-        xml2streams
-        if [ $? -ne 0 ]; then
-            rmDir
-            return 1
-        fi
-    elif [ $streamOrigin = db ]; then
-        if [ $cached = on ]; then
-            REDISSERVER=`which redis-server`
-            if [ $? -ne 0 ]; then
-                echo -e "[\033[1;31mERROR:\033[0m] redis is not installed"
-                return 1
-            fi
-            $REDISSERVER > /dev/null 2>&1 &
-        fi
-    fi
     cp $crondPath/iptvagent /etc/cron.d/
+    $pythonCmd $daemonPath/control/server.py >/dev/null 2>&1 &
+    pid=$!
+    sleep 1
+    if [ ! -d /proc/$pid ]; then
+        $pythonCmd $daemonPath/control/server.py
+        return 1
+    fi
     $daemonPath/iptvagentd &
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] iptvagent start manually" >> $logPath/iptvagent.log
     return 0

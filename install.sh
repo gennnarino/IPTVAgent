@@ -52,6 +52,5 @@ installSoftware awk
 installSoftware sed 
 installSoftware bc 
 installSoftware curl 
-installSoftware redis
 
 echo -e "[\033[1;32mSTATUS:\033[0m] Install successfully"

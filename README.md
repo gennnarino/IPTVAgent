@@ -20,7 +20,9 @@ After installation, you may see these files in /usr/local/IPTVAgent folder:
 
 * iptvagent, is a control program;
 * cfg/iptvagent.cfg, which is IPTVAgent's main configuration file;
+* cfg/control.cfg, which is IPTVAgent's control configuration file;
 * daemon/iptvagentd, is used to run IPTVAgent to collect realtime information every second;
+* daemon/control/*, is used to receive the command from remote server and execute in local;
 * crond/iptvagent, is used to run IPTVAgent to collect detailed information every minute;
 * lib/functions, is main function library used by IPTVAgent;
 * moudules/*, collection programs
@@ -33,7 +35,6 @@ After installation, you may see these files in /usr/local/IPTVAgent folder:
     * Ubuntu: vim /etc/hostname, modify hostname directly
 * you can modify the installation path which is /usr/local/IPTVAgent by default in install.sh
 * you can set on/off status of all modules in cfg/iptvagent.cfg
-* you can get stream information(name,source) from database or xml file by set streamOrigin in cfg/iptvagent.cfg and cached is used to cache the information retrieved from database
 * you should provide the remote and local mysql server's information in cfg/iptvagent.cfg 
 * you should modify  necessary configuration in cfg/control.cfg 
 

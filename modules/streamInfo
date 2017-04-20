@@ -8,9 +8,7 @@
 getStreamInfo() {
     server=`hostname`
     streamName=$1
-    streamSource=$2
-    PID=$(ps -ef|grep  $streamSource |grep -v grep\
-        | awk '{{print " "$2" "}}')
+    PID=$2
     folder=$(echo "/proc/"$PID|sed s/[[:space:]]//g)
     # when /proc/pid exists
     if (`test -d "$folder"`&&`test -n "$PID"`);then
@@ -33,26 +31,26 @@ getStreamInfo() {
 
         #get process mem statistics 
         RSS=$(cat ${fileProcMem}\
-            |grep VmRSS            \
-            | sed 's/':'/''/' \
-    	    |  awk '{{print $2}}'   \
+            |grep VmRSS\
+            | sed 's/':'/''/'\
+    	    |  awk '{{print $2}}'\
         )
-        totalMem=$(cat /proc/meminfo \
-                |grep MemTotal            \
-                | sed 's/':'/''/' \
-            	|  awk '{{print $2}}'   \
+        totalMem=$(cat /proc/meminfo\
+                |grep MemTotal\
+                | sed 's/':'/''/'\
+            	|  awk '{{print $2}}'\
         )
 
         #get process IO statistics 
         readByte=$(cat ${fileProcIO}\
-                |grep ^read_bytes            \
+                |grep ^read_bytes\
                 | sed 's/':'/''/' \
-    	        | awk '{print $2}'   \
+    	        | awk '{print $2}'\
         )
         writeByte=$(cat ${fileProcIO}\
-                |grep ^write_bytes            \
+                |grep ^write_bytes\
                 | sed 's/':'/''/' \
-    	    |  awk '{print $2}'   \
+    	    |  awk '{print $2}'\
         )
     
         #calculate process CPU statistics 
@@ -86,18 +84,16 @@ getStreamInfo() {
         SQLINSERT="insert into stream_info(streamName,status,sourceStatus,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",1,1,$procCPUUserP,$procCPUSystemP,$procCPUTotalP,$memoryP,$RSS,$readByte,$writeByte,\"$recordTime\",\"$server\");"
     else
         #When the process folder doesn't exist
-        #ffmpeg -y -timeout 10 -t 1 -i $streamSource -c:a copy -c:v copy -f flv $tmpPath/1.mp4
-        if [ ! -f $streamingLogPath/${streamName}.log ]; then
-            sourceStatus=1
-        else
+        sourceStatus=1
+        if [ -f $streamingLogPath/${streamName}.log ]; then
             latestTime=`sed -n '/[ERROR]/p' $streamingLogPath/${streamName}.log|tail -1|awk '{print $1,$2}'|cut -c 2-20`
-            latestTime=`date -d "$latestTime" +%s`
-            now=`date +%s`
-            if (( $now - $latestTime > 60 ))
-            then 
-                sourceStatus=1
-            else
-                sourceStatus=0
+            if [ -n "$latestTime" ]; then
+                latestTime=`date -d "$latestTime" +%s`
+                now=`date +%s`
+                diff=$(( $now - $latestTime ))
+                if [ $diff -lt 60 ]; then
+                    sourceStatus=0
+                fi
             fi
         fi
         recordTime=`date +%s`
