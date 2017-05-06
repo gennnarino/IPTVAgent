@@ -68,8 +68,10 @@ startAgent(){
 
 # stop iptvagent
 stopAgent(){
+    pythonCmd=`which python`
     ps -ef|grep iptvagentd|grep -v grep|awk '{print $2}'|xargs kill -9
-    ps -ef|grep server.py|grep -v grep|awk '{print $2}'|xargs kill -9
+    #ps -ef|grep server.py|grep -v grep|awk '{print $2}'|xargs kill -9
+    $pythonCmd $daemonPath/control/client.py
     if [ -f /etc/cron.d/iptvagent ]; then
         rm /etc/cron.d/iptvagent
     fi

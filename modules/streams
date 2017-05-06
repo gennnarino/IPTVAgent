@@ -3,14 +3,27 @@
 # source cfg file
 . /usr/local/IPTVAgent/cfg/iptvagent.cfg
 
+# source lib function
+. $libPath/functions
 # source streamInfo
 . $modulePath/streamInfo
+
+server=`hostname`
+streamingStatus=0
+if [ -d $streamingPath ]; then
+    $streamingPath/iptvstreaming status > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        streamingStatus=1
+    fi
+fi
+SQLUPDATE="update server set streamingStatus=$streamingStatus where serverName=\"$server\";"
+insert $SQLUPDATE
 
 if [ -d $streamingRunPath ]; then
     for pidFile in `ls $streamingRunPath`
         do
             name=${pidFile%.*}
-            pid=`head -1 $streamRunPath/$pidFile`
-            getStreamInfo $name $pid
+            pid=`head -1 $streamingRunPath/$pidFile`
+            getStreamInfo $name $pid &
         done
 fi

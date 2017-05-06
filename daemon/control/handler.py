@@ -2,6 +2,7 @@ import threading
 import datetime
 import json
 from params import Parameter
+import subprocess
 import commands
 
 class ConnectionThread(threading.Thread):
@@ -37,6 +38,13 @@ class ConnectionThread(threading.Thread):
         if info[1] == 0:
             self.sock.close()
 
+    def getstatusoutput(self, cmd):
+        status = subprocess.call(cmd, shell=True)
+        if status == 0:
+            return (status, '')
+        else:
+            return commands.getstatusoutput(cmd)
+
     def executeCmd(self, protocol):
         """
         execute the corresponding command
@@ -55,7 +63,7 @@ class ConnectionThread(threading.Thread):
         if action == Parameter.REQUEST:
     	    if command == Parameter.STOP_IPTVSTREAMING:
                 streamingPath = Parameter.configParse('streamingPath')
-                result = commands.getstatusoutput(streamingPath+'/iptvstreaming stop')
+                result = self.getstatusoutput(streamingPath+'/iptvstreaming stop')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully stopped iptvstreaming' % (now, executor))
@@ -65,7 +73,7 @@ class ConnectionThread(threading.Thread):
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.START_IPTVSTREAMING:
                 streamingPath = Parameter.configParse('streamingPath')
-                result = commands.getstatusoutput(streamingPath+'/iptvstreaming start')
+                result = self.getstatusoutput(streamingPath+'/iptvstreaming start')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully started iptvstreaming' % (now, executor))
@@ -75,7 +83,7 @@ class ConnectionThread(threading.Thread):
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.RESTART_IPTVSTREAMING:
                 streamingPath = Parameter.configParse('streamingPath')
-                result = commands.getstatusoutput(streamingPath+'/iptvstreaming restart')
+                result = self.getstatusoutput(streamingPath+'/iptvstreaming restart')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully restarted iptvstreaming' % (now, executor))
@@ -86,7 +94,7 @@ class ConnectionThread(threading.Thread):
             elif command == Parameter.STOP_STREAM:
                 streamingPath = Parameter.configParse('streamingPath')
                 streamName = protocol['streamName']
-                result = commands.getstatusoutput(streamingPath+'/iptvstreaming stopStream '+streamName)
+                result = self.getstatusoutput(streamingPath+'/iptvstreaming stopStream '+streamName)
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully stopped stream %s' % (now, executor, streamName))
@@ -97,7 +105,7 @@ class ConnectionThread(threading.Thread):
     	    elif command == Parameter.START_STREAM:
                 streamingPath = Parameter.configParse('streamingPath')
                 streamName = protocol['streamName']
-                result = commands.getstatusoutput(streamingPath+'/iptvstreaming startStream '+streamName) 
+                result = self.getstatusoutput(streamingPath+'/iptvstreaming startStream '+streamName) 
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully started stream %s' % (now, executor, streamName))
@@ -108,7 +116,7 @@ class ConnectionThread(threading.Thread):
             elif command == Parameter.RESTART_STREAM:
                 streamingPath = Parameter.configParse('streamingPath')
                 streamName = protocol['streamName']
-                result = commands.getstatusoutput(streamingPath+'/iptvstreaming restartStream '+streamName)
+                result = self.getstatusoutput(streamingPath+'/iptvstreaming restartStream '+streamName)
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully restarted stream %s' % (now, executor, streamName))
@@ -117,7 +125,7 @@ class ConnectionThread(threading.Thread):
                     print >> log, ('[%s] [INFO] [%s] failed to restart stream %s' % (now, executor, streamName))
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.STOP_MYSQL:
-                result = commands.getstatusoutput('service mysql stop')
+                result = self.getstatusoutput('service mysql stop')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully stopped mysql' % (now, executor))
@@ -126,7 +134,7 @@ class ConnectionThread(threading.Thread):
                     print >> log, ('[%s] [INFO] [%s] failed to stop mysql' % (now, executor))
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.START_MYSQL:
-                result = commands.getstatusoutput('service mysql start')
+                result = self.getstatusoutput('service mysql start')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully started mysql' % (now, executor))
@@ -135,7 +143,7 @@ class ConnectionThread(threading.Thread):
                     print >> log, ('[%s] [INFO] [%s] failed to start mysql' % (now, executor))
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.RESTART_MYSQL:
-                result = commands.getstatusoutput('service mysql restart')
+                result = self.getstatusoutput('service mysql restart')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully restarted mysql' % (now, executor))
@@ -145,7 +153,7 @@ class ConnectionThread(threading.Thread):
                     self.sendData([command, 1, result[1]])
             elif command == Parameter.STOP_NGINX:
                 nginxPath = Parameter.configParse('nginxPath')
-                result = commands.getstatusoutput(nginxPath+'/sbin/nginx -s stop')
+                result = self.getstatusoutput(nginxPath+'/sbin/nginx -s stop')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully stopped nginx' % (now, executor))
@@ -155,7 +163,7 @@ class ConnectionThread(threading.Thread):
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.START_NGINX:
                 nginxPath = Parameter.configParse('nginxPath')
-                result = commands.getstatusoutput(nginxPath+'/sbin/nginx')
+                result = self.getstatusoutput(nginxPath+'/sbin/nginx')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully started nginx' % (now, executor))
@@ -165,7 +173,7 @@ class ConnectionThread(threading.Thread):
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.RESTART_NGINX:
                 nginxPath = Parameter.configParse('nginxPath')
-                result = commands.getstatusoutput(nginxPath+'/sbin/nginx -s reload')
+                result = self.getstatusoutput(nginxPath+'/sbin/nginx -s reload')
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully restarted nginx' % (now, executor))

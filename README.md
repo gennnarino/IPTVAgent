@@ -31,7 +31,8 @@ After installation, you may see these files in /usr/local/IPTVAgent folder:
 
 * if your server is `Ubuntu` operating system, please change the default shell environment dash to bash using command: `sudo dpkg-reconfigure dash`
 * you must make sure the server's `hostname` is same as the information stored in database:
-    * CentOS: vim /etc/sysconfig/network, add or modify HOSTNAME=name
+    * CentOS 6,5: vim /etc/sysconfig/network, add or modify HOSTNAME=name
+    * CentOS 7: vim /etc/hostname, modify hostname directly
     * Ubuntu: vim /etc/hostname, modify hostname directly
 * you can modify the installation path which is /usr/local/IPTVAgent by default in install.sh
 * you can set on/off status of all modules in cfg/iptvagent.cfg

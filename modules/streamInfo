@@ -80,7 +80,7 @@ getStreamInfo() {
         ####calculate process Mem statistics 
         memoryP=`echo "scale=4;$RSS/$totalMem*100"|bc |  awk '{printf "%.2f", $0}'`
         ##insert into database
-        SQLUPDATE="update stream set status=1,sourceStatus=1 where server=\"$server\" and streamName=\"$streamName\""  
+        SQLUPDATE="update stream set status=1,sourceStatus=1 where server=\"$server\" and streamName=\"$streamName\";"  
         SQLINSERT="insert into stream_info(streamName,status,sourceStatus,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",1,1,$procCPUUserP,$procCPUSystemP,$procCPUTotalP,$memoryP,$RSS,$readByte,$writeByte,\"$recordTime\",\"$server\");"
     else
         #When the process folder doesn't exist
@@ -97,7 +97,7 @@ getStreamInfo() {
             fi
         fi
         recordTime=`date +%s`
-        SQLUPDATE="update stream set status=0,sourceStatus=$sourceStatus where server=\"$server\" and streamName=\"$streamName\""
+        SQLUPDATE="update stream set status=0,sourceStatus=$sourceStatus where server=\"$server\" and streamName=\"$streamName\";"
         SQLINSERT="insert into stream_info(streamName,status,sourceStatus,user,system,total,memory,rss,readByte,writeByte,recordTime,server) values(\"$streamName\",0,$sourceStatus,0,0,0,0,0,0,0,\"$recordTime\",\"$server\");"
     fi
     echo $SQLINSERT
