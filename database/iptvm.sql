@@ -1,13 +1,15 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2017/3/15 22:50:08                           */
+/* Created on:     2017/5/7 16:21:04                            */
 /*==============================================================*/
-
 drop database if exists iptvm;
 create database iptvm default character set utf8 collate utf8_general_ci;
 use iptvm;
 
-drop procedure if exists updateServerState;
+
+drop procedure if exists updateServerStatus;
+
+drop procedure if exists updateStreamStatus;
 
 drop table if exists account;
 
@@ -179,6 +181,7 @@ create table server
    serverName           varchar(128) not null comment '服务器名称',
    serverIp             varchar(30) not null comment '服务器Ip',
    status               bool not null comment '服务器状态',
+   streamingStatus      bool not null comment '串流状态',
    operatingSystem      varchar(50) not null comment '操作系统',
    createTime           bigint not null comment '创建时间',
    updateTime           bigint not null comment '更新时间',
@@ -797,14 +800,14 @@ alter table traffic comment '流量';
 
 
 DELIMITER $$
-CREATE PROCEDURE updateServerState()
+CREATE PROCEDURE updateServerStatus()
 BEGIN
     DECLARE Done INT DEFAULT 0;
 	DECLARE pserver VARCHAR(128);
 	DECLARE precordtime BIGINT;
 	DECLARE pstatus TINYINT; 
 	DECLARE pdiff INT;
-	DECLARE pcursor CURSOR FOR SELECT server,recordTime FROM realtime;
+	DECLARE pcursor CURSOR FOR SELECT `server`,recordTime FROM realtime;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET Done = 1;
 	OPEN pcursor;
 	FETCH NEXT FROM pcursor INTO pserver,precordtime;
@@ -828,6 +831,31 @@ END
 $$
 DELIMITER ;
 
+
+DELIMITER $$
+CREATE PROCEDURE updateStreamStatus()
+BEGIN
+	DECLARE Done INT DEFAULT 0;
+	DECLARE pserver VARCHAR(128);
+	DECLARE pstreamingStatus TINYINT;
+
+	DECLARE pcursor CURSOR FOR SELECT serverName,streamingStatus FROM `server`;
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET Done = 1;
+	OPEN pcursor;
+	FETCH NEXT FROM pcursor INTO pserver,pstreamingStatus;
+	REPEAT
+		IF NOT Done THEN
+			IF pstreamingStatus = 0 THEN
+				UPDATE stream SET `status`=0 WHERE `server`=pserver;
+			END IF;
+		END IF;
+		FETCH NEXT FROM pcursor INTO pserver,pstreamingStatus;
+	UNTIL Done END REPEAT;
+	CLOSE pcursor;
+END
+$$
+DELIMITER ;
+
 # trigger
 DROP TRIGGER IF EXISTS `insertApp`;
 DELIMITER $$
@@ -835,15 +863,21 @@ CREATE TRIGGER `insertApp`
 AFTER INSERT ON `server` 
 FOR EACH ROW 
 BEGIN
-insert into mysql values (1, new.serverName );
-insert into nginx values (1, new.serverName );
+insert into mysql values (0, new.serverName );
+insert into nginx values (0, new.serverName );
 END
 $$
 DELIMITER ;
 
 # scheduler event
 SET GLOBAL event_scheduler = 1;
-DROP EVENT IF EXISTS `callUpdateProcedure`;
+DROP EVENT IF EXISTS `callUpdateServerProcedure`;
 DELIMITER $$
-CREATE EVENT `callUpdateProcedure` ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerState
+CREATE EVENT `callUpdateServerProcedure` ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerStatus
+$$
+DELIMITER ;
+
+DROP EVENT IF EXISTS `callUpdateStreamProcedure`;
+DELIMITER $$
+CREATE EVENT `callUpdateStreamProcedure` ON SCHEDULE EVERY 1 MINUTE STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateStreamStatus
 $$
