@@ -72,6 +72,10 @@ stopAgent(){
     ps -ef|grep iptvagentd|grep -v grep|awk '{print $2}'|xargs kill -9
     #ps -ef|grep server.py|grep -v grep|awk '{print $2}'|xargs kill -9
     $pythonCmd $daemonPath/control/client.py
+    #local count=`lsof -i :6666 | sed '1d' | wc -l`
+    #if [ $count -ne 0 ]; then
+    #    lsof -i :6666 | sed '1d' | awk '{print $2}' | xargs kill -9
+    #fi
     if [ -f /etc/cron.d/iptvagent ]; then
         rm /etc/cron.d/iptvagent
     fi

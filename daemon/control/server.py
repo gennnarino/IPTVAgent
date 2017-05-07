@@ -1,6 +1,6 @@
 import socket
 from params import Parameter
-from handler import ConnectionThread
+from handler import ConnectionProcess
 
 HOST = Parameter.configParse('localIP')
 PORT = int(Parameter.configParse('localPort'))
@@ -8,6 +8,7 @@ PORT = int(Parameter.configParse('localPort'))
 def main():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         s.bind((HOST, PORT))
         s.listen(5)
     except socket.error,e:
@@ -25,8 +26,8 @@ def main():
             sock.close()
             break 
         # create thread to handle the connection
-        t = ConnectionThread(sock, addr)
-        t.start()
+        p = ConnectionProcess(sock, addr)
+        p.start()
 
     s.close()
 

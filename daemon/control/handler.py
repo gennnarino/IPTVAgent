@@ -1,11 +1,11 @@
-import threading
+import multiprocessing
 import datetime
 import json
 from params import Parameter
 import subprocess
 import commands
 
-class ConnectionThread(threading.Thread):
+class ConnectionProcess(multiprocessing.Process):
     """
     Receive data from client and send the response
     """
@@ -18,7 +18,7 @@ class ConnectionThread(threading.Thread):
         @param addr client address
         @param lock mutex lock
         """
-        super(ConnectionThread, self).__init__()
+        super(ConnectionProcess, self).__init__()
         self.sock = sock
         self.addr = addr
     
