@@ -16,15 +16,21 @@ CREATE TRIGGER `insertApp`
 AFTER INSERT ON `server` 
 FOR EACH ROW 
 BEGIN
-insert into mysql values (1, new.serverName );
-insert into nginx values (1, new.serverName );
+insert into mysql values (0, new.serverName );
+insert into nginx values (0, new.serverName );
 END
 $$
 DELIMITER ;
 
 # scheduler event
 SET GLOBAL event_scheduler = 1;
-DROP EVENT IF EXISTS `callUpdateProcedure`;
+DROP EVENT IF EXISTS `callUpdateServerProcedure`;
 DELIMITER $$
-CREATE EVENT `callUpdateProcedure` ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerState
+CREATE EVENT `callUpdateServerProcedure` ON SCHEDULE EVERY 1 SECOND STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateServerStatus
+$$
+DELIMITER ;
+
+DROP EVENT IF EXISTS `callUpdateStreamProcedure`;
+DELIMITER $$
+CREATE EVENT `callUpdateStreamProcedure` ON SCHEDULE EVERY 1 MINUTE STARTS CURRENT_TIMESTAMP ON COMPLETION NOT PRESERVE ENABLE DO CALL updateStreamStatus
 $$
