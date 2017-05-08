@@ -38,6 +38,13 @@ class ConnectionProcess(multiprocessing.Process):
         if info[1] == 0:
             self.sock.close()
 
+    def getOS(self):
+        result = commands.getstatusoutput("head -1 /etc/issue | awk '{print $1}'")
+        if result[0] == 0:
+            return result[1]
+        else:
+            return 'Unknown'
+
     def getstatusoutput(self, cmd):
         status = subprocess.call(cmd, shell=True)
         if status == 0:
@@ -125,7 +132,14 @@ class ConnectionProcess(multiprocessing.Process):
                     print >> log, ('[%s] [INFO] [%s] failed to restart stream %s' % (now, executor, streamName))
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.STOP_MYSQL:
-                result = self.getstatusoutput('service mysql stop')
+                system = self.getOS()
+                if system == 'CentOS':
+                    result = self.getstatusoutput('service mysqld stop')
+                elif system == 'Ubuntu':
+                    result = self.getstatusoutput('service mysql stop')
+                else:
+                    self.sendData([command, 0, 'unknown system, please execute command on the server'])
+                    return 1
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully stopped mysql' % (now, executor))
@@ -134,7 +148,14 @@ class ConnectionProcess(multiprocessing.Process):
                     print >> log, ('[%s] [INFO] [%s] failed to stop mysql' % (now, executor))
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.START_MYSQL:
-                result = self.getstatusoutput('service mysql start')
+                system = self.getOS()
+                if system == 'CentOS':
+                    result = self.getstatusoutput('service mysqld start')
+                elif system == 'Ubuntu':
+                    result = self.getstatusoutput('service mysql start')
+                else:
+                    self.sendData([command, 0, 'unknown system, please execute command on the server'])
+                    return 1
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully started mysql' % (now, executor))
@@ -143,7 +164,14 @@ class ConnectionProcess(multiprocessing.Process):
                     print >> log, ('[%s] [INFO] [%s] failed to start mysql' % (now, executor))
                     self.sendData([command, 0, result[1]])
             elif command == Parameter.RESTART_MYSQL:
-                result = self.getstatusoutput('service mysql restart')
+                system = self.getOS()
+                if system == 'CentOS':
+                    result = self.getstatusoutput('service mysqld restart')
+                elif system == 'Ubuntu':
+                    result = self.getstatusoutput('service mysql restart')
+                else:
+                    self.sendData([command, 0, 'unknown system, please execute command on the server'])
+                    return 1
                 status = result[0]
                 if status == 0:
                     print >> log, ('[%s] [INFO] [%s] successfully restarted mysql' % (now, executor))
