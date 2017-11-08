@@ -12,7 +12,7 @@ IPTVAgent is a agent tool,which can be used to gather system information, e.g. C
 
 IPTVAgent is available on GitHub, you can clone and install it as follows:
 
-  $ git clone https://github.com/LazarAngelov/IPTVAgent.git  
+  $ git clone https://github.com/AlexanderJLiu/IPTVAgent.git  
   $ cd IPTVAgent  
   $ ./install.sh  
 
